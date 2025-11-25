@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+---
+
+# Parlomo Refactoring Guidelines
+
+## Project Context
+
+- We are refactoring the legacy Parlomo marketplace that lives in `parlomo-front` (referred to as **the-original**).
+- The modernized codebase resides in `parlomo-refactored` (referred to as **the-refactored**).
+- Backend API endpoints must remain compatible with the existing Laravel services. The canonical list is tracked in `parlomo-refactored/docs/PARLOMO_BACKEND_ENDPOINTS.md`; consult it before touching any feature that calls the API.
+
+## Refactoring Principles
+
+- Preserve endpoint contracts, payload shapes, and authentication requirements defined in the-original.
+- As features are migrated, reference the endpoint inventory to understand required params and responses; update the doc if new endpoints are discovered.
+- Rebuild UI/UX, state management, and client-side logic using the-refactored architecture (Next.js 16 App Router, React 19, Tailwind v4, Redux Toolkit + Context).
+- Treat the-original as a functional specification; only pull legacy code for business logic reference, not for direct copy.
+
+## Architecture & Conventions (Inherited from Sample Admin Panel)
+
+- **Frameworks:** Next.js 16 App Router, React 19.
+- **Styling:** Tailwind CSS v4 with CSS custom properties. Never hard-code colors; use `var(--color-*)` tokens.
+- **State:** Redux Toolkit for business data, React Context for auth/theme.
+- **HTTP:** Centralized Axios instance with interceptors (`src/lib/axios.js`). Service functions live under `src/services/` and are feature-scoped.
+- **Forms:** Formik + Yup for validation and submission handling.
+- **Notifications:** Sonner for toasts.
+- **Components:** Follow feature-first folders with named exports for all custom components. Pages keep minimal logic and compose feature components.
+- **Tables:** Use the shared table component set (`Table`, `TableHeader`, `TableHeaderCell`, `TableRow`, `TableCell`, `TableActions`) exactly as designed.
+- **Routing:** Use route groups (`(auth)`, `(dashboard)`), provide `loading.js` and `error.js` where required, await `params` in Next.js 16 server components and API routes.
+
+## Data & Pagination Requirements
+
+- All list features must implement server-side pagination using the standardized `{ data, links, meta }` response contract documented in `docs/PAGINATION_PATTERNS.md`.
+- URL search params are the single source of truth for pagination, filters, and search. Sync Redux state from the URL and avoid circular updates.
+
+## Implementation Workflow
+
+1. Review relevant endpoints in `PARLOMO_BACKEND_ENDPOINTS.md` to confirm required API calls.
+2. Identify the matching legacy implementation in the-original, extract business rules, and rewrite using the-refactored patterns.
+3. Update or create services, slices, and components following the conventions above.
+4. Document any endpoint additions or contract clarifications back in the endpoint inventory.
+
+## Quality Expectations
+
+- Run ESLint (`npm run lint`) and Prettier formatting before finishing a task.
+- Remove unused imports, avoid `console.log` in production code, and ensure error states and loading skeletons are handled.
+- Maintain accessibility: semantic HTML, keyboard focus, descriptive labels.
+
+## Legacy API Access (CORS & Auth)
+
+- The Laravel backend returns `Access-Control-Allow-Origin: *`, so **never set `withCredentials` to `true`** on browser-side requests. Doing so triggers a CORS failure when cookies are included.
+- Follow the-original: authenticate admin calls by attaching the stored bearer token. Use the centralized axios client to read `localStorage.userData.token` (or the refactored equivalent) and populate the `Authorization` header instead of relying on cookies.
+- If an endpoint truly needs cookies, build a Next.js proxy route so the browser hits a same-origin URL; do *not* toggle `withCredentials` directly against `https://api.parlomo.co.uk`.
+- When adding new services, double-check the axios instance configuration before testing to avoid reintroducing the wildcard/credentials CORS issue.
+
+Use this rule set as the default guidance for every Parlomo refactoring session.

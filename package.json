@@ -1,0 +1,52 @@
+{
+    "name": "parlomo-refactored",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint",
+        "lint:fix": "eslint --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "dependencies": {
+        "@paypal/react-paypal-js": "^8.9.2",
+        "@reduxjs/toolkit": "^2.9.2",
+        "@stripe/react-stripe-js": "^5.3.0",
+        "@stripe/stripe-js": "^8.3.0",
+        "axios": "^1.13.1",
+        "crypto-js": "^4.2.0",
+        "date-fns": "^4.1.0",
+        "express": "^5.1.0",
+        "firebase": "^12.5.0",
+        "firebase-admin": "^13.6.0",
+        "formik": "^2.4.6",
+        "google-map-react": "^2.2.5",
+        "isomorphic-dompurify": "^2.31.0",
+        "jsonwebtoken": "^9.0.2",
+        "locutus": "^2.0.32",
+        "lucide-react": "^0.548.0",
+        "next": "16.0.1",
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
+        "react-dropzone": "^14.3.8",
+        "react-google-recaptcha-v3": "^1.11.0",
+        "react-redux": "^9.2.0",
+        "sass": "^1.93.2",
+        "sonner": "^2.0.7",
+        "uuid": "^13.0.0",
+        "yup": "^1.7.1"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4",
+        "babel-plugin-react-compiler": "1.0.0",
+        "eslint": "^9",
+        "eslint-config-next": "16.0.1",
+        "eslint-config-prettier": "^10.1.8",
+        "https": "^1.0.0",
+        "prettier": "^3.6.2",
+        "tailwindcss": "^4"
+    }
+}

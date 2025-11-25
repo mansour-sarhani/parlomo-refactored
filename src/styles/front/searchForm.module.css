@@ -1,0 +1,528 @@
+.homeSearchForm {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.homeSearchField {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    height: 70px;
+}
+
+.homeSearchField input {
+    padding: 15px 63% 15px 30px;
+    font-size: 16px;
+    border-radius: 100px;
+    filter: drop-shadow(0 3px 15px rgba(0,0,0,0.16));
+    height: 70px;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    color: #333333;
+}
+
+.frontNightMode .homeSearchField input {
+    background: var(--semi-dark--color);
+    color: #fff;
+}
+
+.frontNightMode .homeSearchField input:focus {
+    border-color: #ffffff;
+}
+
+.frontNightMode .homeSearchField input:-webkit-autofill,
+.frontNightMode .homeSearchField input:-webkit-autofill:focus {
+    transition: background-color 600000s 0s, color 600000s 0s;
+}
+
+.frontNightMode .homeSearchField input::placeholder {
+    opacity: 0.8;
+    color: #ffffff;
+}
+
+.searchFormParts {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 30px;
+    top: 15px;
+    bottom: 15px;
+}
+
+.searchFormLocation {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-right: 1px solid rgba(0,0,0,.3);
+    padding-right: 15px;
+    margin-right: 15px;
+}
+
+.frontNightMode .searchFormLocation {
+    border-right: 1px solid rgba(255,255,255,.3);
+}
+
+.getMyLocation {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding-right: 15px;
+    margin-right: 15px;
+    border-right: 1px solid rgba(0,0,0,.3);
+}
+
+.frontNightMode .getMyLocation {
+    border-right: 1px solid rgba(255,255,255,.3);
+}
+
+.getMyLocation span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: max-content;
+}
+
+.frontNightMode .getMyLocation span {
+    opacity: 0.8;
+}
+
+.getMyLocation svg {
+    font-size: 18px;
+}
+
+.myLocation {
+    color: var(--alt-color);
+}
+
+.frontNightMode .myLocation {
+    color: var(--primary-color);
+}
+
+.searchFormCategories {
+    display: flex;
+    align-items: center;
+    padding-right: 15px;
+}
+
+.searchFormCategories svg {
+    font-size: 24px;
+    opacity: 0.7;
+}
+
+.frontNightMode .searchFormCategories svg {
+    color: #ffffff;
+}
+
+.searchFormParts select {
+    border: none;
+    background: transparent;
+}
+
+.frontNightMode .searchFormParts select {
+    background: var(--semi-dark--color);
+    color: #ffffff;
+    opacity: 0.8;
+}
+
+.searchBtn {
+    border-radius: 28px;
+    padding: 10px 20px;
+    border: 1px solid var(--alt-color);
+    background-color: var(--alt-color);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+}
+
+.frontNightMode .searchBtn {
+    border: 1px solid var(--primary-color);
+    background-color: var(--primary-color);
+    color: var(--dark-color);
+}
+
+.showMapBtn {
+    color: var(--alt-color);
+    margin-right: 5px;
+    border-radius: 28px;
+    padding: 10px 20px;
+    border: 1px solid var(--alt-color);
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.searchFormFilters .showMapBtn {
+    height: 60px;
+    margin-right: 0;
+    justify-content: center;
+}
+
+.frontNightMode .showMapBtn {
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.searchFormFilters {
+    margin-top: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.mapSearch {
+    display: flex;
+    margin-bottom: 0;
+    margin-left: 50px;
+    align-items: center;
+}
+
+.mapSearch form {
+    width: 100%;
+}
+
+.searchTopWrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.searchFilterBtn  {
+    width: 10%;
+}
+
+.searchFilterBtn span {
+    width: 100%;
+    border-radius: 3em;
+    height: 60px;
+    font-size: 16px;
+    border: none;
+    background: var(--alt-color);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.frontNightMode .searchFilterBtn span {
+    background: var(--primary-color);
+    color: var(--dark-color);
+}
+
+.searchBar {
+    width: 78%;
+    margin-left: 1%;
+    margin-right: 1%;
+}
+
+.searchTopWrapper.adTopSearchWrapper .searchBar {
+    width: 88%;
+    margin-right: 0;
+}
+
+.searchFilterWrapper {
+    width: 100%;
+    background-color: var(--grey-color);
+    display: flex;
+    border-radius: 1em;
+    margin-top: 20px;
+}
+
+.frontNightMode .searchFilterWrapper {
+    background-color: #222222;
+}
+
+.searchFilterColumn {
+    width: 100%;
+    border-right: 1px solid #cccccc;
+    padding-right: 10px;
+}
+
+.searchFilterColumn:last-child {
+    border-right: none;
+}
+
+.searchFilterColumnContent {
+    margin: 20px 10px 20px 20px;
+    height: 150px;
+    overflow-y: auto;
+}
+
+.searchFilterColumnContent h5 {
+    display: flex;
+    align-items: center;
+}
+
+.searchFilterColumnContent h5 svg {
+    margin-right: 5px;
+}
+
+.searchFilterColumn ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 5px;
+}
+
+.searchFilterColumn ul li {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+li.activeFilterItem {
+    color: var(--alt-color);
+}
+
+.frontNightMode li.activeFilterItem {
+    color: var(--primary-color);
+}
+
+.filteredItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.filteredItem span {
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.removeFilter {
+    color: red !important;
+    margin-left: 0 !important;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.filterShowMapBtn {
+    width: 10%;
+}
+
+.mapSearchForm {
+    width: 78%;
+    margin-left: 1%;
+    margin-right: 1%;
+}
+
+.mapSearchHeader {
+    height: 130px;
+    display: flex;
+    align-items: center;
+    width: 85%;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.mapSearchHeader form {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.backGridBtn {
+    width: 10%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--alt-color);
+    border: none;
+    border-radius: 100px;
+    color: #fff;
+}
+
+.frontNightMode .backGridBtn {
+    background: var(--primary-color);
+    color: var(--dark-color);
+}
+
+.backGridBtn svg {
+    font-size: 20px;
+    margin-right: 3px;
+}
+
+.mapSearchBtns {
+    width: 10%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mapSearchBtns span {
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--alt-color);
+    border: none;
+    border-radius: 20px;
+    font-size: 30px;
+    color: #fff;
+    margin: 0 5px;
+}
+
+.frontNightMode .mapSearchBtns span {
+    background: var(--primary-color);
+    color: var(--dark-color);
+}
+
+/************ RESPONSIVE ************/
+
+@media screen and (max-width: 1220px) {
+    .homeSearchForm {
+        width: 100%;
+    }
+
+    .frontNightMode input,
+    .frontNightMode select {
+        background: var(--semi-dark--color);
+        color: #fff;
+        opacity: 0.8;
+    }
+
+    .frontNightMode input::placeholder {
+        opacity: 0.8;
+        color: #fff;
+    }
+
+    .getMyLocation {
+        border: 1px solid #ced4da;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        background: #fff;
+        border-radius: 7px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .frontNightMode .getMyLocation {
+        background: var(--semi-dark--color);
+        color: #fff;
+    }
+
+    .getMyLocation span {
+        width: 100%;
+        height: 100%;
+        font-size: 14px;
+    }
+
+    .myLocation {
+        background-color: var(--alt-color);
+        color: #ffffff;
+        border-radius: 7px;
+    }
+
+    .frontNightMode .myLocation {
+        background-color: var(--primary-color);
+        color: var(--dark-color);
+    }
+
+    .showMapBtn,
+    .searchBtn{
+        width: 100%;
+        border-radius: 7px;
+        font-size: 16px;
+        text-align: center;
+        justify-content: center;
+        height: 40px;
+    }
+
+    .responsiveSearchHeader .filterShowMapBtn,
+    .responsiveSearchHeader .filterShowMapBtn span,
+    .responsiveSearchHeader .searchFilterBtn,
+    .responsiveSearchHeader .searchFilterBtn span {
+        width: 100%;
+        height: 40px;
+        border-radius: 7px;
+    }
+
+    .searchFilterWrapper,
+    .slidingFilters {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        height: 100vh;
+        padding: 20px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: auto;
+        transition: transform 0.3s ease-in-out;
+        z-index: 1111;
+        background-color: #efefef;
+    }
+
+    .frontNightMode .searchFilterWrapper,
+    .frontNightMode .slidingFilters {
+        background-color: var(--light-dark-color);
+    }
+
+    .responsiveSearchHeader .searchFilterColumn {
+        border-right: none;
+        padding: 0;
+    }
+
+    .responsiveSearchHeader .searchFilterColumnContent {
+        margin: 20px 0;
+        height: auto;
+    }
+
+    .responsiveSearchHeader .mapSearchHeader {
+        width: 100%;
+        padding: 20px 0;
+        height: 80px;
+    }
+
+    .responsiveSearchHeader .mapSearchForm {
+        width: 100%;
+        margin: 0;
+    }
+
+    .responsiveSearchHeader .backGridBtn {
+        width: 48%;
+        min-width: 48%;
+        border-radius: 7px;
+        height: 40px;
+        margin-right: 2%;
+    }
+
+    .responsiveSearchHeader .searchFormCategories {
+        padding-right: 0;
+    }
+
+    .responsiveSearchHeader .responsiveMapHeaderExtra {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .responsiveSearchHeader .mapSearchBtns {
+        width: 100%;
+        height: 40px;
+    }
+
+    .responsiveSearchHeader .mapSearchBtns span {
+        border-radius: 7px;
+        height: 40px;
+        font-size: 14px;
+        margin: 0;
+        width: 48%;
+    }
+
+    .slidingFilters .searchFilterBtn {
+        margin-bottom: 20px;
+    }
+
+}
