@@ -18,7 +18,7 @@ export function BadgePurchaseIntro({ intro, loading, error, onStart }) {
             };
         }
 
-        import("isomorphic-dompurify")
+        import("dompurify")
             .then((module) => {
                 if (!isMounted) {
                     return;

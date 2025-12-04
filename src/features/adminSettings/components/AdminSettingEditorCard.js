@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import DOMPurify from "isomorphic-dompurify";
+import { useEffect, useMemo, useState } from "react";
 import { Form, Formik } from "formik";
 import { toast } from "sonner";
 
@@ -39,6 +38,11 @@ export const AdminSettingEditorCard = ({
 }) => {
     const dispatch = useAppDispatch();
     const entry = useAppSelector((state) => selectAdminSetting(state, settingKey));
+    const [purify, setPurify] = useState(null);
+
+    useEffect(() => {
+        import("dompurify").then((mod) => setPurify(() => mod.default));
+    }, []);
 
     const isLoadingInitial = Boolean(entry?.loading && !entry?.lastFetched);
     const isSaving = Boolean(entry?.saving);
@@ -114,7 +118,7 @@ export const AdminSettingEditorCard = ({
                     }}
                 >
                     {({ values, dirty, isSubmitting, resetForm }) => {
-                        const sanitizedPreview = DOMPurify.sanitize(values.value ?? "");
+                        const sanitizedPreview = purify ? purify.sanitize(values.value ?? "") : "";
                         const disableSubmit = !dirty || isSaving || isSubmitting;
 
                         return (
