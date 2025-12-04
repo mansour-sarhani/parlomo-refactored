@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, ChevronDown, X } from "lucide-react";
-import { navigation, adminNavigation } from "@/constants/navigation";
+import { navigation, adminNavigation, devNavigation } from "@/constants/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { checkMenuPermission } from "@/utils/permissions";
@@ -398,6 +398,23 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                                 </div>
                             )}
                             {filteredAdminNavigation.map(renderMenuItem)}
+                        </>
+                    )}
+
+                    {/* Dev Navigation */}
+                    {devNavigation && devNavigation.length > 0 && (
+                        <>
+                            {!isCollapsed && (
+                                <div className="px-3 pt-4 pb-2">
+                                    <p
+                                        className="text-xs font-semibold uppercase tracking-wider"
+                                        style={{ color: "var(--color-text-tertiary)" }}
+                                    >
+                                        Dev Tools
+                                    </p>
+                                </div>
+                            )}
+                            {devNavigation.map(renderMenuItem)}
                         </>
                     )}
                 </nav>

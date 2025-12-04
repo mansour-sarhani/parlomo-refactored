@@ -1,0 +1,74 @@
+{
+  "categories": [
+    {
+      "id": "concert",
+      "name": "Concert",
+      "slug": "concert",
+      "icon": "Music",
+      "description": "Live music performances and concerts"
+    },
+    {
+      "id": "conference",
+      "name": "Conference",
+      "slug": "conference",
+      "icon": "Users",
+      "description": "Professional conferences and summits"
+    },
+    {
+      "id": "workshop",
+      "name": "Workshop",
+      "slug": "workshop",
+      "icon": "Wrench",
+      "description": "Educational workshops and training sessions"
+    },
+    {
+      "id": "festival",
+      "name": "Festival",
+      "slug": "festival",
+      "icon": "PartyPopper",
+      "description": "Festivals and large-scale celebrations"
+    },
+    {
+      "id": "sports",
+      "name": "Sports",
+      "slug": "sports",
+      "icon": "Trophy",
+      "description": "Sporting events and competitions"
+    },
+    {
+      "id": "theater",
+      "name": "Theater",
+      "slug": "theater",
+      "icon": "Theater",
+      "description": "Theater performances and plays"
+    },
+    {
+      "id": "comedy",
+      "name": "Comedy",
+      "slug": "comedy",
+      "icon": "Laugh",
+      "description": "Comedy shows and stand-up performances"
+    },
+    {
+      "id": "networking",
+      "name": "Networking",
+      "slug": "networking",
+      "icon": "Network",
+      "description": "Professional networking events"
+    },
+    {
+      "id": "charity",
+      "name": "Charity",
+      "slug": "charity",
+      "icon": "Heart",
+      "description": "Charity and fundraising events"
+    },
+    {
+      "id": "other",
+      "name": "Other",
+      "slug": "other",
+      "icon": "MoreHorizontal",
+      "description": "Other types of events"
+    }
+  ]
+}

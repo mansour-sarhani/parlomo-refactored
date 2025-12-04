@@ -99,7 +99,7 @@ export const Header = () => {
                                 <Home size={18} />
                                 Home
                             </Link>
-                            <Link href="/event" className="hover:text-[var(--color-primary)] transition-colors">
+                            <Link href="/events" className="hover:text-[var(--color-primary)] transition-colors">
                                 Events
                             </Link>
                             <Link href="/directory" className="hover:text-[var(--color-primary)] transition-colors">
@@ -188,7 +188,7 @@ export const Header = () => {
                                     <Home size={20} />
                                     <span className="font-medium">Home</span>
                                 </Link>
-                                <Link href="/event" className="p-3 rounded-lg hover:bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] hover:text-[var(--color-primary)] font-medium transition-colors">
+                                <Link href="/events" className="p-3 rounded-lg hover:bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] hover:text-[var(--color-primary)] font-medium transition-colors">
                                     Events
                                 </Link>
                                 <Link href="/directory" className="p-3 rounded-lg hover:bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] hover:text-[var(--color-primary)] font-medium transition-colors">

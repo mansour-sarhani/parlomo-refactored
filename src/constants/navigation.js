@@ -25,6 +25,8 @@ import {
     MessageSquare,
     Settings,
     Receipt,
+    DollarSign,
+    Ticket,
 } from "lucide-react";
 
 export const navigation = [
@@ -59,6 +61,25 @@ export const navigation = [
         permission: {
             groupName: "Chat",
         },
+    },
+    {
+        name: "Events",
+        icon: CalendarDays,
+        // User-facing events menu
+        children: [
+            {
+                name: "My Events",
+                href: "/panel/my-events",
+                icon: CalendarDays,
+                // Always visible for users
+            },
+            {
+                name: "Create Event",
+                href: "/panel/my-events/create",
+                icon: ClipboardPlus,
+                // Always visible for users
+            },
+        ],
     },
     {
         name: "Marketplace",
@@ -156,6 +177,23 @@ export const adminNavigation = [
                 permission: {
                     groupName: "Event Category",
                     permission: "show admin eventCategory",
+                },
+            },
+        ],
+    },
+    {
+        name: "Public Events",
+        icon: Ticket,
+        permission: {
+            groupName: "Admin",
+        },
+        children: [
+            {
+                name: "Categories",
+                href: "/panel/admin/public-events/categories",
+                icon: FolderKanban,
+                permission: {
+                    groupName: "Admin",
                 },
             },
         ],
@@ -304,6 +342,31 @@ export const adminNavigation = [
         },
     },
     {
+        name: "Financials",
+        icon: DollarSign,
+        permission: {
+            groupName: "Admin",
+        },
+        children: [
+            {
+                name: "Settlements",
+                href: "/panel/admin/financials/settlements",
+                icon: DollarSign,
+                permission: {
+                    groupName: "Admin",
+                },
+            },
+            {
+                name: "Refunds",
+                href: "/panel/admin/financials/refunds",
+                icon: Receipt,
+                permission: {
+                    groupName: "Admin",
+                },
+            },
+        ],
+    },
+    {
         name: "Settings",
         href: "/panel/admin/settings",
         icon: Settings,
@@ -361,24 +424,10 @@ export const devNavigation = [
         href: "/panel/components-demo",
         icon: Blocks,
     },
+    //add ticket-testing seed
     {
-        name: "Register Admin",
-        href: "/panel/register-admin",
-        icon: UserPlus,
-    },
-    {
-        name: "Test DB Connection",
-        href: "/panel/test-connection",
-        icon: Database,
-    },
-    {
-        name: "Test Axios",
-        href: "/panel/test-axios",
-        icon: Network,
-    },
-    {
-        name: "🔍 Debug Auth",
-        href: "/panel/debug-auth",
-        icon: Database,
+        name: "Seed Data",
+        href: "/panel/test-ticketing/seed",
+        icon: TicketPercent,
     },
 ];
