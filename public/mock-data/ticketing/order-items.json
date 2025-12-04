@@ -1,0 +1,38 @@
+{
+  "1": {
+    "id": 1,
+    "orderId": 1,
+    "ticketTypeId": 2,
+    "seatId": null,
+    "quantity": 2,
+    "unitPrice": 14900,
+    "discount": 0,
+    "subtotal": 29800,
+    "ticketTypeName": "General Admission",
+    "metadata": {}
+  },
+  "2": {
+    "id": 2,
+    "orderId": 2,
+    "ticketTypeId": 5,
+    "seatId": null,
+    "quantity": 1,
+    "unitPrice": 12500,
+    "discount": 2500,
+    "subtotal": 10000,
+    "ticketTypeName": "Weekend Pass",
+    "metadata": {}
+  },
+  "3": {
+    "id": 3,
+    "orderId": 3,
+    "ticketTypeId": 1,
+    "seatId": null,
+    "quantity": 3,
+    "unitPrice": 9900,
+    "discount": 0,
+    "subtotal": 29700,
+    "ticketTypeName": "Early Bird",
+    "metadata": {}
+  }
+}

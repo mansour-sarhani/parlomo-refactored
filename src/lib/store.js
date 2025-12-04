@@ -3,6 +3,10 @@ import usersReducer from "@/features/users/usersSlice";
 import bookmarksReducer from "@/features/bookmarks/bookmarksSlice";
 import eventCategoriesReducer from "@/features/eventCategories/eventCategoriesSlice";
 import eventsReducer from "@/features/events/eventsSlice";
+import publicEventsReducer from "@/features/public-events/publicEventsSlice";
+import publicEventCategoriesReducer from "@/features/public-events/publicEventCategoriesSlice";
+import ticketingReducer from "@/features/ticketing/ticketingSlice";
+import ordersReducer from "@/features/ticketing/ordersSlice";
 import adTypesReducer from "@/features/marketplace/adTypesSlice";
 import adCategoriesReducer from "@/features/marketplace/adCategoriesSlice";
 import adAttributesReducer from "@/features/marketplace/adAttributesSlice";
@@ -45,6 +49,10 @@ export const makeStore = () => {
             bookmarks: bookmarksReducer,
             eventCategories: eventCategoriesReducer,
             events: eventsReducer,
+            publicEvents: publicEventsReducer,
+            publicEventCategories: publicEventCategoriesReducer,
+            ticketing: ticketingReducer,
+            orders: ordersReducer,
             marketplaceAdTypes: adTypesReducer,
             marketplaceAdCategories: adCategoriesReducer,
             marketplaceAdAttributes: adAttributesReducer,
@@ -90,6 +98,12 @@ export const makeStore = () => {
                         "marketplace/adAttributes/update/pending",
                         "marketplace/adAttributes/update/fulfilled",
                         "marketplace/adAttributes/update/rejected",
+                        "publicEventCategories/create/pending",
+                        "publicEventCategories/create/fulfilled",
+                        "publicEventCategories/create/rejected",
+                        "publicEventCategories/update/pending",
+                        "publicEventCategories/update/fulfilled",
+                        "publicEventCategories/update/rejected",
                     ],
                     // Ignore these paths in state for non-serializable values (File objects)
                     ignoredPaths: [

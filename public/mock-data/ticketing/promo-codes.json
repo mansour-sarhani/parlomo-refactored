@@ -1,0 +1,91 @@
+{
+  "1": {
+    "id": 1,
+    "currentUses": 0,
+    "active": true,
+    "code": "EARLY2024",
+    "type": "percent",
+    "amount": 20,
+    "validFrom": "2024-01-01T00:00:00.000Z",
+    "validTo": "2024-12-31T00:00:00.000Z",
+    "maxUses": 100,
+    "maxPerUser": 1,
+    "appliesToTicketTypeIds": null,
+    "minOrderValue": 5000,
+    "metadata": {
+      "description": "Early bird 20% discount"
+    },
+    "createdAt": "2025-11-28T15:36:41.221Z"
+  },
+  "2": {
+    "id": 2,
+    "currentUses": 0,
+    "active": true,
+    "code": "SAVE10",
+    "type": "fixed",
+    "amount": 1000,
+    "validFrom": "2024-01-01T00:00:00.000Z",
+    "validTo": "2024-12-31T00:00:00.000Z",
+    "maxUses": 0,
+    "maxPerUser": 2,
+    "appliesToTicketTypeIds": null,
+    "minOrderValue": 3000,
+    "metadata": {
+      "description": "£10 off any order"
+    },
+    "createdAt": "2025-11-28T15:36:41.221Z"
+  },
+  "3": {
+    "id": 3,
+    "currentUses": 0,
+    "active": true,
+    "code": "VIPONLY",
+    "type": "percent",
+    "amount": 15,
+    "validFrom": "2024-01-01T00:00:00.000Z",
+    "validTo": "2024-12-31T00:00:00.000Z",
+    "maxUses": 50,
+    "maxPerUser": 1,
+    "appliesToTicketTypeIds": [
+      3
+    ],
+    "minOrderValue": 0,
+    "metadata": {
+      "description": "VIP exclusive discount"
+    },
+    "createdAt": "2025-11-28T15:36:41.222Z"
+  },
+  "4": {
+    "id": 4,
+    "currentUses": 0,
+    "active": true,
+    "code": "EXPIRED",
+    "type": "percent",
+    "amount": 50,
+    "validFrom": "2023-01-01T00:00:00.000Z",
+    "validTo": "2023-12-31T00:00:00.000Z",
+    "maxUses": 100,
+    "maxPerUser": 1,
+    "appliesToTicketTypeIds": null,
+    "minOrderValue": 0,
+    "metadata": {
+      "description": "Expired promo for testing"
+    },
+    "createdAt": "2025-11-28T15:36:41.223Z"
+  },
+  "5": {
+    "id": 5,
+    "currentUses": 0,
+    "active": true,
+    "eventId": 2,
+    "code": "OFF50",
+    "discountType": "percentage",
+    "discountAmount": 50,
+    "maxUses": null,
+    "startDate": "2025-11-28T13:48:00.000Z",
+    "endDate": null,
+    "minOrderAmount": 0,
+    "applicableTicketTypes": [],
+    "createdAt": "2025-11-28T17:18:20.043Z"
+  }
+}

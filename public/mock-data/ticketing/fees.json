@@ -1,0 +1,47 @@
+{
+  "1": {
+    "id": 1,
+    "active": true,
+    "name": "Service Fee",
+    "type": "percent",
+    "amount": 5,
+    "payer": "buyer",
+    "cap": 1000,
+    "appliesTo": "all",
+    "applicableIds": null,
+    "taxable": false,
+    "metadata": {
+      "description": "Platform service fee"
+    }
+  },
+  "2": {
+    "id": 2,
+    "active": true,
+    "name": "Processing Fee",
+    "type": "per_order",
+    "amount": 200,
+    "payer": "buyer",
+    "cap": null,
+    "appliesTo": "all",
+    "applicableIds": null,
+    "taxable": false,
+    "metadata": {
+      "description": "Payment processing fee"
+    }
+  },
+  "3": {
+    "id": 3,
+    "active": true,
+    "name": "Platform Fee",
+    "type": "percent",
+    "amount": 3,
+    "payer": "organizer",
+    "cap": null,
+    "appliesTo": "all",
+    "applicableIds": null,
+    "taxable": false,
+    "metadata": {
+      "description": "Platform commission"
+    }
+  }
+}
