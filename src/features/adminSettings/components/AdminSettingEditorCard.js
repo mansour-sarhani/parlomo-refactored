@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Card, CardFooter, CardHeader } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { SkeletonForm } from "@/components/common/Skeleton";
-import { TextareaField } from "@/components/forms";
+import { RichTextEditor } from "@/components/forms/RichTextEditor";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { fetchAdminSetting, selectAdminSetting, updateAdminSetting } from "../adminSettingsSlice";
 
@@ -32,9 +32,9 @@ export const AdminSettingEditorCard = ({
     description,
     helperText,
     previewTitle = "Preview",
-    textareaLabel = "Page Content",
-    textareaPlaceholder = "Enter page content here",
-    minRows = 18,
+    editorLabel = "Page Content",
+    editorPlaceholder = "Enter page content here...",
+    editorMinHeight = 350,
 }) => {
     const dispatch = useAppDispatch();
     const entry = useAppSelector((state) => selectAdminSetting(state, settingKey));
@@ -117,7 +117,7 @@ export const AdminSettingEditorCard = ({
                         }
                     }}
                 >
-                    {({ values, dirty, isSubmitting, resetForm }) => {
+                    {({ values, dirty, isSubmitting, resetForm, setFieldValue }) => {
                         const sanitizedPreview = purify ? purify.sanitize(values.value ?? "") : "";
                         const disableSubmit = !dirty || isSaving || isSubmitting;
 
@@ -125,14 +125,28 @@ export const AdminSettingEditorCard = ({
                             <Form className="space-y-6">
                                 <div className="grid gap-6 lg:grid-cols-2">
                                     <div className="space-y-4">
-                                        <TextareaField
-                                            name="value"
-                                            label={textareaLabel}
-                                            placeholder={textareaPlaceholder}
-                                            rows={minRows}
-                                            required={false}
-                                            helperText={helperText}
-                                        />
+                                        <div className="space-y-2">
+                                            <label
+                                                className="block text-sm font-medium"
+                                                style={{ color: "var(--color-text-secondary)" }}
+                                            >
+                                                {editorLabel}
+                                            </label>
+                                            <RichTextEditor
+                                                value={values.value}
+                                                onChange={(content) => setFieldValue("value", content)}
+                                                placeholder={editorPlaceholder}
+                                                minHeight={editorMinHeight}
+                                            />
+                                            {helperText && (
+                                                <p
+                                                    className="text-xs"
+                                                    style={{ color: "var(--color-text-tertiary)" }}
+                                                >
+                                                    {helperText}
+                                                </p>
+                                            )}
+                                        </div>
 
                                         {fetchError && (
                                             <div
@@ -153,7 +167,7 @@ export const AdminSettingEditorCard = ({
                                             {previewTitle}
                                         </h4>
                                         <div
-                                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 text-sm prose prose-sm max-w-none"
+                                            className="admin-preview-content rounded-lg border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 text-sm max-w-none"
                                             style={{ color: "var(--color-text-primary)" }}
                                             dangerouslySetInnerHTML={{
                                                 __html:
@@ -162,6 +176,66 @@ export const AdminSettingEditorCard = ({
                                                         : "<p style='opacity:0.6;'>No content yet. Start writing on the left to see the live preview.</p>",
                                             }}
                                         />
+                                        <style jsx global>{`
+                                            .admin-preview-content h1 {
+                                                font-size: 1.875rem;
+                                                font-weight: 700;
+                                                margin-bottom: 0.75rem;
+                                                color: var(--color-text-primary);
+                                            }
+                                            .admin-preview-content h2 {
+                                                font-size: 1.5rem;
+                                                font-weight: 600;
+                                                margin-bottom: 0.5rem;
+                                                color: var(--color-text-primary);
+                                            }
+                                            .admin-preview-content h3 {
+                                                font-size: 1.25rem;
+                                                font-weight: 600;
+                                                margin-bottom: 0.5rem;
+                                                color: var(--color-text-primary);
+                                            }
+                                            .admin-preview-content p {
+                                                margin-bottom: 0.75rem;
+                                                line-height: 1.6;
+                                            }
+                                            .admin-preview-content ul,
+                                            .admin-preview-content ol {
+                                                margin-left: 1.5rem;
+                                                margin-bottom: 0.75rem;
+                                            }
+                                            .admin-preview-content ul {
+                                                list-style-type: disc;
+                                            }
+                                            .admin-preview-content ol {
+                                                list-style-type: decimal;
+                                            }
+                                            .admin-preview-content li {
+                                                margin-bottom: 0.25rem;
+                                            }
+                                            .admin-preview-content a {
+                                                color: var(--color-primary);
+                                                text-decoration: underline;
+                                            }
+                                            .admin-preview-content a:hover {
+                                                opacity: 0.8;
+                                            }
+                                            .admin-preview-content strong,
+                                            .admin-preview-content b {
+                                                font-weight: 600;
+                                            }
+                                            .admin-preview-content em,
+                                            .admin-preview-content i {
+                                                font-style: italic;
+                                            }
+                                            .admin-preview-content u {
+                                                text-decoration: underline;
+                                            }
+                                            .admin-preview-content s,
+                                            .admin-preview-content strike {
+                                                text-decoration: line-through;
+                                            }
+                                        `}</style>
                                     </div>
                                 </div>
 

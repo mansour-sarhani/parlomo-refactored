@@ -1,30 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react";
+import {
+    Facebook,
+    Twitter,
+    Instagram,
+    Linkedin,
+    Mail,
+    Phone,
+    MapPin,
+    ChevronUp,
+} from "lucide-react";
 
 export const Footer = () => {
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     return (
-        <footer className="bg-[var(--color-surface)] border-t border-[var(--color-border)] pt-12 pb-6">
+        <footer className="bg-[#051522] relative pt-16 pb-6">
+            {/* Scroll to top button */}
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50">
+                <button
+                    onClick={scrollToTop}
+                    className="w-12 h-12 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white hover:bg-[var(--color-primary-dark)] transition-colors shadow-lg"
+                    aria-label="Scroll to top"
+                >
+                    <ChevronUp size={24} />
+                </button>
+            </div>
+
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
                     {/* Company Info */}
                     <div>
-                        <h3 className="text-xl font-bold text-[var(--color-primary)] mb-4">Parlomo</h3>
-                        <p className="text-[var(--color-text-secondary)] mb-4 leading-relaxed">
-                            The leading marketplace for finding the best local businesses and services. Connect with professionals in your area.
+                        <h3 className="text-xl font-bold text-[var(--color-primary)] mb-4">
+                            Parlomo
+                        </h3>
+                        <p className="text-gray-400 mb-4 leading-relaxed">
+                            Promote your business platform by using Parlomo free account with
+                            detailed profile, advanced search and post updates, user-friendly and
+                            powerful marketing tools.
                         </p>
                         <div className="flex gap-4">
-                            <a href="#" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                            <a
+                                href="#"
+                                className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                            >
                                 <Facebook size={20} />
                             </a>
-                            <a href="#" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                            <a
+                                href="#"
+                                className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                            >
                                 <Twitter size={20} />
                             </a>
-                            <a href="#" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                            <a
+                                href="#"
+                                className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                            >
                                 <Instagram size={20} />
                             </a>
-                            <a href="#" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                            <a
+                                href="#"
+                                className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                            >
                                 <Linkedin size={20} />
                             </a>
                         </div>
@@ -32,25 +72,37 @@ export const Footer = () => {
 
                     {/* Quick Links */}
                     <div>
-                        <h4 className="text-lg font-bold text-[var(--color-text-primary)] mb-4">Quick Links</h4>
+                        <h4 className="text-lg font-bold text-white mb-4">Quick Links</h4>
                         <ul className="space-y-2">
                             <li>
-                                <Link href="/about" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/about"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     About Us
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/contact" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/contact"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     Contact Us
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/terms" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
-                                    Terms of Service
+                                <Link
+                                    href="/faq"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
+                                    FAQ
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/privacy" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/privacy-policy"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     Privacy Policy
                                 </Link>
                             </li>
@@ -59,25 +111,37 @@ export const Footer = () => {
 
                     {/* Categories */}
                     <div>
-                        <h4 className="text-lg font-bold text-[var(--color-text-primary)] mb-4">Categories</h4>
+                        <h4 className="text-lg font-bold text-white mb-4">Categories</h4>
                         <ul className="space-y-2">
                             <li>
-                                <Link href="/category/restaurants" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/category/restaurants"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     Restaurants
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/category/shopping" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/category/shopping"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     Shopping
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/category/services" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/category/services"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     Services
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/category/health" className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">
+                                <Link
+                                    href="/category/health"
+                                    className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
+                                >
                                     Health & Beauty
                                 </Link>
                             </li>
@@ -86,17 +150,21 @@ export const Footer = () => {
 
                     {/* Contact Info */}
                     <div>
-                        <h4 className="text-lg font-bold text-[var(--color-text-primary)] mb-4">Contact Us</h4>
+                        <h4 className="text-lg font-bold text-white mb-4">Contact Us</h4>
                         <ul className="space-y-4">
-                            <li className="flex items-start gap-3 text-[var(--color-text-secondary)]">
+                            <li className="flex items-start gap-3 text-gray-400">
                                 <MapPin size={20} className="shrink-0 mt-1" />
-                                <span>123 Business Street, Suite 100<br />London, UK SW1A 1AA</span>
+                                <span>
+                                    123 Business Street, Suite 100
+                                    <br />
+                                    London, UK SW1A 1AA
+                                </span>
                             </li>
-                            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
+                            <li className="flex items-center gap-3 text-gray-400">
                                 <Phone size={20} className="shrink-0" />
                                 <span>+44 20 1234 5678</span>
                             </li>
-                            <li className="flex items-center gap-3 text-[var(--color-text-secondary)]">
+                            <li className="flex items-center gap-3 text-gray-400">
                                 <Mail size={20} className="shrink-0" />
                                 <span>support@parlomo.co.uk</span>
                             </li>
@@ -104,7 +172,7 @@ export const Footer = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-[var(--color-border)] pt-6 text-center text-[var(--color-text-secondary)] text-sm">
+                <div className="border-t border-gray-700 pt-6 text-center text-gray-500 text-sm">
                     <p>&copy; {new Date().getFullYear()} Parlomo. All rights reserved.</p>
                 </div>
             </div>

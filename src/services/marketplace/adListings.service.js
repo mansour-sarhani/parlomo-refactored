@@ -8,6 +8,10 @@ const MULTIPART_HEADERS = {
 };
 
 export const adListingsService = {
+    fetchPublicListings(params = {}) {
+        return api.get("/api/classified-ad", { params });
+    },
+
     fetchAdminListings(params = {}) {
         return api.get("/api/admin/classified-ad", { params });
     },

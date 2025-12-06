@@ -92,10 +92,44 @@ export const checkPublicIdAvailability = async (publicId) => {
     }
 };
 
+/**
+ * Get public setting by key (About, Contact, FAQ, Policy)
+ * @param {string} key - Setting key (About, Contact, FAQ, Policy)
+ * @returns {Promise<Object>} Setting data with key and value (HTML content)
+ */
+export const getPublicSetting = async (key) => {
+    try {
+        const response = await api.get(`/api/setting?key=${key}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Send contact form message
+ * @param {Object} data - Contact form data
+ * @param {string} data.title - Message title/subject
+ * @param {string} data.email - Sender's email
+ * @param {string} data.message - Message content
+ * @param {string} data.token - reCAPTCHA token
+ * @returns {Promise<Object>} Success response
+ */
+export const sendContactForm = async (data) => {
+    try {
+        const response = await api.post('/api/contact-us', data);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export default {
     getCurrentUser,
     updateProfile,
     changePassword,
     checkPublicIdAvailability,
+    getPublicSetting,
+    sendContactForm,
 };
 

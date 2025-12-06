@@ -4,14 +4,17 @@ import { adListingsService } from "@/services/marketplace";
 const initialState = {
     adminList: [],
     userList: [],
+    publicList: [],
     currentAdminListing: null,
     currentUserListing: null,
     loading: false,
     userLoading: false,
+    publicLoading: false,
     creating: false,
     updating: false,
     error: null,
     userError: null,
+    publicError: null,
     pagination: {
         page: 1,
         pages: 0,
@@ -19,6 +22,12 @@ const initialState = {
         limit: 10,
     },
     userPagination: {
+        page: 1,
+        pages: 0,
+        total: 0,
+        limit: 10,
+    },
+    publicPagination: {
         page: 1,
         pages: 0,
         total: 0,
@@ -110,6 +119,18 @@ export const updateAdListing = createAsyncThunk(
     }
 );
 
+export const fetchPublicAdListings = createAsyncThunk(
+    "marketplace/adListings/fetchPublic",
+    async (params = {}, { rejectWithValue }) => {
+        try {
+            const response = await adListingsService.fetchPublicListings(params);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error?.message || "Failed to load ads");
+        }
+    }
+);
+
 const adListingsSlice = createSlice({
     name: "marketplaceAdListings",
     initialState,
@@ -137,6 +158,9 @@ const adListingsSlice = createSlice({
         },
         clearUserListingError(state) {
             state.userError = null;
+        },
+        clearPublicListingError(state) {
+            state.publicError = null;
         },
     },
     extraReducers: (builder) => {
@@ -226,6 +250,25 @@ const adListingsSlice = createSlice({
             .addCase(updateAdListing.rejected, (state, action) => {
                 state.updating = false;
                 state.error = action.payload;
+            })
+
+            .addCase(fetchPublicAdListings.pending, (state) => {
+                state.publicLoading = true;
+                state.publicError = null;
+            })
+            .addCase(fetchPublicAdListings.fulfilled, (state, action) => {
+                state.publicLoading = false;
+                const payload = action.payload || {};
+                state.publicList = payload.data || [];
+                const meta = payload.meta || {};
+                state.publicPagination.page = meta.current_page || 1;
+                state.publicPagination.pages = meta.last_page || 0;
+                state.publicPagination.total = meta.total || 0;
+                state.publicPagination.limit = meta.per_page || state.publicPagination.limit;
+            })
+            .addCase(fetchPublicAdListings.rejected, (state, action) => {
+                state.publicLoading = false;
+                state.publicError = action.payload;
             });
     },
 });
@@ -238,6 +281,7 @@ export const {
     clearCurrentUserListing,
     clearAdListingError,
     clearUserListingError,
+    clearPublicListingError,
 } = adListingsSlice.actions;
 
 export default adListingsSlice.reducer;

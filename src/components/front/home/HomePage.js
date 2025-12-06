@@ -7,6 +7,7 @@ import { HomeEvents } from "./HomeEvents";
 import { HomeVideo } from "./HomeVideo";
 import { HomeSponsoredDirectories } from "./HomeSponsoredDirectories";
 import { HomeNewPost } from "./HomeNewPost";
+import { DownloadApp } from "./DownloadApp";
 
 export const HomePage = () => {
     return (
@@ -18,6 +19,7 @@ export const HomePage = () => {
             <HomeSponsoredDirectories />
             <HomeLatestAds />
             <HomeNewPost />
+            <DownloadApp />
         </div>
     );
 };
