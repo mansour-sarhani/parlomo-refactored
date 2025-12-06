@@ -1,8 +1,42 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Megaphone, Video, Target, Share2 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 
 export function AdvertisingPurchaseIntro({ intro, loading, error, onStart }) {
+    const [sanitizedIntro, setSanitizedIntro] = useState("");
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if (!intro) {
+            setSanitizedIntro("");
+            return () => {
+                isMounted = false;
+            };
+        }
+
+        import("dompurify")
+            .then((module) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                const DOMPurify = module.default || module;
+                setSanitizedIntro(DOMPurify.sanitize(intro));
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setSanitizedIntro("");
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [intro]);
     const features = [
         {
             icon: Video,
@@ -57,12 +91,74 @@ export function AdvertisingPurchaseIntro({ intro, loading, error, onStart }) {
                         >
                             {error}
                         </div>
-                    ) : intro ? (
-                        <div
-                            className="prose prose-sm max-w-none"
-                            style={{ color: "var(--color-text-secondary)" }}
-                            dangerouslySetInnerHTML={{ __html: intro }}
-                        />
+                    ) : sanitizedIntro ? (
+                        <>
+                            <div
+                                className="advertising-intro-content max-w-none"
+                                style={{ color: "var(--color-text-primary)" }}
+                                dangerouslySetInnerHTML={{ __html: sanitizedIntro }}
+                            />
+                            <style jsx global>{`
+                                .advertising-intro-content h1 {
+                                    font-size: 1.875rem;
+                                    font-weight: 700;
+                                    margin-bottom: 0.75rem;
+                                    color: var(--color-text-primary);
+                                }
+                                .advertising-intro-content h2 {
+                                    font-size: 1.5rem;
+                                    font-weight: 600;
+                                    margin-bottom: 0.5rem;
+                                    color: var(--color-text-primary);
+                                }
+                                .advertising-intro-content h3 {
+                                    font-size: 1.25rem;
+                                    font-weight: 600;
+                                    margin-bottom: 0.5rem;
+                                    color: var(--color-text-primary);
+                                }
+                                .advertising-intro-content p {
+                                    margin-bottom: 0.75rem;
+                                    line-height: 1.6;
+                                }
+                                .advertising-intro-content ul,
+                                .advertising-intro-content ol {
+                                    margin-left: 1.5rem;
+                                    margin-bottom: 0.75rem;
+                                }
+                                .advertising-intro-content ul {
+                                    list-style-type: disc;
+                                }
+                                .advertising-intro-content ol {
+                                    list-style-type: decimal;
+                                }
+                                .advertising-intro-content li {
+                                    margin-bottom: 0.25rem;
+                                }
+                                .advertising-intro-content a {
+                                    color: var(--color-primary);
+                                    text-decoration: underline;
+                                }
+                                .advertising-intro-content a:hover {
+                                    opacity: 0.8;
+                                }
+                                .advertising-intro-content strong,
+                                .advertising-intro-content b {
+                                    font-weight: 600;
+                                }
+                                .advertising-intro-content em,
+                                .advertising-intro-content i {
+                                    font-style: italic;
+                                }
+                                .advertising-intro-content u {
+                                    text-decoration: underline;
+                                }
+                                .advertising-intro-content s,
+                                .advertising-intro-content strike {
+                                    text-decoration: line-through;
+                                }
+                            `}</style>
+                        </>
                     ) : null}
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center pt-2">

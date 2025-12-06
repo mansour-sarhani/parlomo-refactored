@@ -17,8 +17,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-    title: "Parlomo Admin Panel",
-    description: "Admin panel for Parlomo Trade platform",
+    title: {
+        default: "Parlomo",
+        template: "%s | Parlomo",
+    },
+    description: "Parlomo Trade platform",
 };
 
 export default function RootLayout({ children }) {

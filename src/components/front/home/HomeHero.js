@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import useGeolocation from "@/hooks/useGeolocation";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/common/Button";
+
+const API_BASE_URL = "https://api.parlomo.co.uk";
 
 export const HomeHero = () => {
     const router = useRouter();
@@ -15,6 +19,8 @@ export const HomeHero = () => {
         postcode: ""
     });
     const [usingLocation, setUsingLocation] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     const {
         data: coords,
@@ -24,6 +30,26 @@ export const HomeHero = () => {
         enableHighAccuracy: false,
         timeout: 5000,
     });
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/directory-category?list=all`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // Get only top-level categories (depth: 0) and limit to 5
+                    const topLevelCategories = data.filter(cat => cat.depth === 0).slice(0, 5);
+                    setCategories(topLevelCategories);
+                }
+            } catch (error) {
+                console.error("Failed to fetch categories:", error);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
@@ -109,23 +135,50 @@ export const HomeHero = () => {
             {/* Categories Quick Access */}
             <div className="container mx-auto px-4">
                 <div className="flex flex-wrap justify-center gap-6">
-                    {/* Placeholder for categories - will be dynamic later */}
-                    {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer">
-                            <div className="w-24 h-24 rounded-xl bg-[var(--color-background)] border border-[var(--color-border)] flex items-center justify-center group-hover:border-[var(--color-primary)] transition-colors">
-                                <div className="w-12 h-12 bg-[var(--color-border)] rounded-full opacity-20"></div>
+                    {categoriesLoading ? (
+                        // Loading skeleton
+                        [...Array(5)].map((_, i) => (
+                            <div key={i} className="flex flex-col items-center gap-2">
+                                <div className="w-24 h-24 rounded-xl bg-[var(--color-background)] border border-[var(--color-border)] animate-pulse"></div>
+                                <div className="w-16 h-4 bg-[var(--color-border)] rounded animate-pulse"></div>
                             </div>
-                            <span className="font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">Category {i}</span>
-                        </div>
-                    ))}
-                    <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                        <div className="w-24 h-24 rounded-xl bg-[var(--color-background)] border border-[var(--color-border)] flex flex-wrap p-2 gap-1 group-hover:border-[var(--color-primary)] transition-colors overflow-hidden">
-                            {[1, 2, 3, 4].map(j => (
-                                <div key={j} className="w-[calc(50%-2px)] h-[calc(50%-2px)] bg-[var(--color-border)] rounded-sm opacity-20"></div>
-                            ))}
+                        ))
+                    ) : (
+                        // Actual categories
+                        categories.map((category) => (
+                            <Link
+                                key={category.id}
+                                href={`/directory-search?category=${category.slug}`}
+                                className="flex flex-col items-center gap-2 group cursor-pointer"
+                            >
+                                <div className="w-24 h-24 rounded-xl bg-[var(--color-background)] border border-[var(--color-border)] flex items-center justify-center group-hover:border-[var(--color-primary)] transition-colors overflow-hidden">
+                                    {category.image ? (
+                                        <Image
+                                            src={`${API_BASE_URL}${category.path}/${category.image}`}
+                                            alt={category.title}
+                                            width={96}
+                                            height={96}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 bg-[var(--color-border)] rounded-full opacity-20"></div>
+                                    )}
+                                </div>
+                                <span className="font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] text-sm text-center max-w-24">
+                                    {category.title}
+                                </span>
+                            </Link>
+                        ))
+                    )}
+                    <Link
+                        href="/directory-categories"
+                        className="flex flex-col items-center gap-2 group cursor-pointer"
+                    >
+                        <div className="w-24 h-24 rounded-xl bg-[var(--color-background)] border border-[var(--color-border)] flex items-center justify-center group-hover:border-[var(--color-primary)] transition-colors">
+                            <Grid3X3 size={32} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" />
                         </div>
                         <span className="font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">View All</span>
-                    </div>
+                    </Link>
                 </div>
             </div>
         </div>

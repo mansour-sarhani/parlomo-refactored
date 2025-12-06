@@ -94,11 +94,73 @@ export function BadgePurchaseIntro({ intro, loading, error, onStart }) {
                             {error}
                         </div>
                     ) : sanitizedIntro ? (
-                        <div
-                            className="prose prose-sm max-w-none"
-                            style={{ color: "var(--color-text-secondary)" }}
-                            dangerouslySetInnerHTML={{ __html: sanitizedIntro }}
-                        />
+                        <>
+                            <div
+                                className="badge-intro-content max-w-none"
+                                style={{ color: "var(--color-text-primary)" }}
+                                dangerouslySetInnerHTML={{ __html: sanitizedIntro }}
+                            />
+                            <style jsx global>{`
+                                .badge-intro-content h1 {
+                                    font-size: 1.875rem;
+                                    font-weight: 700;
+                                    margin-bottom: 0.75rem;
+                                    color: var(--color-text-primary);
+                                }
+                                .badge-intro-content h2 {
+                                    font-size: 1.5rem;
+                                    font-weight: 600;
+                                    margin-bottom: 0.5rem;
+                                    color: var(--color-text-primary);
+                                }
+                                .badge-intro-content h3 {
+                                    font-size: 1.25rem;
+                                    font-weight: 600;
+                                    margin-bottom: 0.5rem;
+                                    color: var(--color-text-primary);
+                                }
+                                .badge-intro-content p {
+                                    margin-bottom: 0.75rem;
+                                    line-height: 1.6;
+                                }
+                                .badge-intro-content ul,
+                                .badge-intro-content ol {
+                                    margin-left: 1.5rem;
+                                    margin-bottom: 0.75rem;
+                                }
+                                .badge-intro-content ul {
+                                    list-style-type: disc;
+                                }
+                                .badge-intro-content ol {
+                                    list-style-type: decimal;
+                                }
+                                .badge-intro-content li {
+                                    margin-bottom: 0.25rem;
+                                }
+                                .badge-intro-content a {
+                                    color: var(--color-primary);
+                                    text-decoration: underline;
+                                }
+                                .badge-intro-content a:hover {
+                                    opacity: 0.8;
+                                }
+                                .badge-intro-content strong,
+                                .badge-intro-content b {
+                                    font-weight: 600;
+                                }
+                                .badge-intro-content em,
+                                .badge-intro-content i {
+                                    font-style: italic;
+                                }
+                                .badge-intro-content u {
+                                    text-decoration: underline;
+                                }
+                                .badge-intro-content s,
+                                .badge-intro-content strike {
+                                    text-decoration: line-through;
+                                }
+                            `}</style>
+                        </>
                     ) : null}
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center pt-2">

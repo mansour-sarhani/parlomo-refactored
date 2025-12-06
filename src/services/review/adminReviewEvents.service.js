@@ -39,6 +39,7 @@ export const adminReviewEventsService = {
         const formData = new FormData();
         formData.append("status", payload.status);
         formData.append("reason", payload.reason ?? "");
+        formData.append("id", id);
         formData.append("_method", "PATCH");
 
         const response = await api.post(`/api/admin/review/event/${id}`, formData, {

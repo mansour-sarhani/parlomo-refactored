@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, ChevronDown, X } from "lucide-react";
 import { navigation, adminNavigation, devNavigation } from "@/constants/navigation";
@@ -319,20 +320,18 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                 >
                     {!isCollapsed ? (
                         <div className="flex items-center gap-3 flex-1">
-                            <div
-                                className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
-                                style={{
-                                    background:
-                                        "linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)",
-                                }}
-                            >
-                                BF
-                            </div>
+                            <Image
+                                src="/assets/images/logo.avif"
+                                alt="Parlomo Logo"
+                                width={36}
+                                height={36}
+                                className="w-9 h-9 rounded-lg flex-shrink-0 object-contain"
+                            />
                             <h1
                                 className="text-lg font-bold tracking-tight"
                                 style={{ color: "var(--color-text-primary)" }}
                             >
-                                Parlomo Panel
+                                Parlomo
                             </h1>
                         </div>
                     ) : (
@@ -341,15 +340,13 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                             className="w-full flex justify-center"
                             aria-label="Expand sidebar"
                         >
-                            <div
-                                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white text-sm transition-transform hover:scale-110"
-                                style={{
-                                    background:
-                                        "linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)",
-                                }}
-                            >
-                                BF
-                            </div>
+                            <Image
+                                src="/assets/images/logo.avif"
+                                alt="Parlomo Logo"
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 rounded-lg transition-transform hover:scale-110 object-contain"
+                            />
                         </button>
                     )}
 
@@ -446,9 +443,13 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                 >
                     {!isCollapsed ? (
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                BF
-                            </div>
+                            <Image
+                                src="/assets/images/logo.avif"
+                                alt="Parlomo Logo"
+                                width={36}
+                                height={36}
+                                className="w-9 h-9 rounded-full flex-shrink-0 object-contain"
+                            />
                             <div className="flex-1 min-w-0">
                                 <p
                                     className="text-xs font-semibold truncate leading-tight"
@@ -469,9 +470,13 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                             </div>
                         </div>
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mx-auto">
-                            BF
-                        </div>
+                        <Image
+                            src="/assets/images/logo.avif"
+                            alt="Parlomo Logo"
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-full mx-auto object-contain"
+                        />
                     )}
                 </div>
             </aside>
