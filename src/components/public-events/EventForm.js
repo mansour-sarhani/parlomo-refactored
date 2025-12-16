@@ -38,10 +38,20 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
     // Normalize initial data - convert nested MongoDB structure to flat form fields
     const normalizeInitialData = (data) => {
         if (!data) return null;
+
+        // Handle category - could be in category_id, categoryId, or category object
+        let categoryId = data.category_id || data.categoryId;
+        if (typeof categoryId === 'object') {
+            categoryId = categoryId?.id;
+        }
+        // If category is a populated object, extract the id
+        if (!categoryId && data.category && typeof data.category === 'object') {
+            categoryId = data.category.id;
+        }
+
         return {
             ...data,
-            // If category is a populated object, extract the slug
-            category: typeof data.category === 'object' ? data.category?.slug : data.category,
+            category_id: categoryId,
             // Flatten venue
             venueName: data.venue?.name || data.venueName || '',
             // Flatten location
@@ -120,8 +130,8 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                 if (!formData.description?.trim()) {
                     stepErrors.description = "Event description is required";
                 }
-                if (!formData.category) {
-                    stepErrors.category = "Event category is required";
+                if (!formData.category_id) {
+                    stepErrors.category_id = "Event category is required";
                 }
                 break;
 
@@ -258,9 +268,10 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                 toast.success("Draft created successfully");
             }
 
-            router.push(`/panel/my-events/${result.event.id}/edit`);
+            const event = result.data || result.event;
+            router.push(`/panel/my-events/${event.id}/edit`);
         } catch (error) {
-            toast.error(error.error || "Failed to save draft");
+            toast.error(error.error || error.message || "Failed to save draft");
         } finally {
             setIsSaving(false);
         }
@@ -300,9 +311,10 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                 toast.success("Event created and published successfully");
             }
 
-            router.push(`/panel/my-events/${result.event.id}`);
+            const event = result.data || result.event;
+            router.push(`/panel/my-events/${event.id}`);
         } catch (error) {
-            toast.error(error.error || "Failed to publish event");
+            toast.error(error.error || error.message || "Failed to publish event");
         } finally {
             setIsSaving(false);
         }

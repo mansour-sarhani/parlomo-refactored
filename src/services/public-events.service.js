@@ -7,6 +7,141 @@
 import ticketingAxios from '@/lib/ticketing-axios';
 
 /**
+ * Parse age restriction to integer
+ * Handles formats like "21+", "18", "21 and over", etc.
+ * @param {string|number|null} value - Age restriction value
+ * @returns {number|null} Parsed integer or null
+ */
+const parseAgeRestriction = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number') return value;
+    // Extract numeric part from strings like "21+", "18 and over", etc.
+    const match = String(value).match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+};
+
+/**
+ * Transform frontend data to FormData for multipart upload
+ * @param {Object} data - Frontend event data
+ * @returns {FormData} FormData object for multipart submission
+ */
+const transformToFormData = (data) => {
+    const formData = new FormData();
+
+    // Text fields - only append if value exists
+    if (data.status) formData.append('status', data.status);
+    if (data.category_id) formData.append('category_id', data.category_id);
+    if (data.title) formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    if (data.eventType) formData.append('event_type', data.eventType);
+    if (data.startDate) formData.append('start_date', data.startDate);
+    if (data.endDate) formData.append('end_date', data.endDate);
+    if (data.bookingDeadline) formData.append('booking_deadline', data.bookingDeadline);
+    if (data.doorsOpen) formData.append('doors_open', data.doorsOpen);
+    if (data.timezone) formData.append('timezone', data.timezone);
+    if (data.venueName) formData.append('venue_name', data.venueName);
+    if (data.venueCapacity) formData.append('venue_capacity', data.venueCapacity);
+    if (data.venueAddress) formData.append('address', data.venueAddress);
+    if (data.city) formData.append('city', data.city);
+    if (data.state) formData.append('state', data.state);
+    if (data.country) formData.append('country', data.country);
+    if (data.postcode) formData.append('postcode', data.postcode);
+    if (data.latitude) formData.append('lat', data.latitude);
+    if (data.longitude) formData.append('lng', data.longitude);
+    if (data.globalCapacity) formData.append('global_capacity', data.globalCapacity);
+    if (data.currency) formData.append('currency', data.currency);
+    formData.append('waitlist_enabled', data.waitlistEnabled ? '1' : '0');
+    if (data.videoUrl) formData.append('video_url', data.videoUrl);
+
+    const ageRestriction = parseAgeRestriction(data.ageRestriction);
+    if (ageRestriction !== null) formData.append('age_restriction', ageRestriction);
+
+    if (data.refundPolicy) formData.append('refund_policy', data.refundPolicy);
+    if (data.termsAndConditions) formData.append('terms_and_conditions', data.termsAndConditions);
+    if (data.taxRate !== null && data.taxRate !== undefined) formData.append('tax_rate', data.taxRate);
+    formData.append('featured', data.featured ? '1' : '0');
+    // Send show_remaining_tickets if backend supports it
+    if (data.showRemainingTickets !== undefined) {
+        formData.append('show_remaining_tickets', data.showRemainingTickets ? '1' : '0');
+    }
+
+    // Organizer fields
+    if (data.organizerName) formData.append('organizer_name', data.organizerName);
+    if (data.organizerEmail) formData.append('organizer_email', data.organizerEmail);
+    if (data.organizerPhone) formData.append('organizer_phone', data.organizerPhone);
+    if (data.organizerWebsite) formData.append('organizer_website', data.organizerWebsite);
+    if (data.organizerFacebook) formData.append('organizer_facebook', data.organizerFacebook);
+    if (data.organizerInstagram) formData.append('organizer_instagram', data.organizerInstagram);
+    if (data.organizerWhatsApp) formData.append('organizer_whatsapp', data.organizerWhatsApp);
+
+    // Arrays - need to be JSON stringified or sent individually
+    if (data.tags && data.tags.length > 0) {
+        data.tags.forEach((tag, index) => {
+            formData.append(`tags[${index}]`, tag);
+        });
+    }
+
+    if (data.serviceCharges && data.serviceCharges.length > 0) {
+        data.serviceCharges.forEach((charge, index) => {
+            formData.append(`service_charges[${index}][title]`, charge.title);
+            formData.append(`service_charges[${index}][type]`, charge.type);
+            formData.append(`service_charges[${index}][amountType]`, charge.amountType);
+            formData.append(`service_charges[${index}][amount]`, charge.amount);
+        });
+    }
+
+    // Handle cover image - send as File object
+    if (data.coverImage && data.coverImage instanceof File) {
+        formData.append('cover_image', data.coverImage);
+    }
+
+    // Handle gallery images - send both new File objects and existing image filenames
+    // galleryImages can be: array of Files, array of strings (URLs), or JSON string from API
+    if (data.galleryImages) {
+        let galleryImages = data.galleryImages;
+
+        // If it's a JSON string, parse it
+        if (typeof galleryImages === 'string') {
+            try {
+                galleryImages = JSON.parse(galleryImages);
+            } catch {
+                // Not valid JSON, skip
+                galleryImages = [];
+            }
+        }
+
+        // Separate existing images (strings/URLs) from new uploads (File objects)
+        const existingImages = [];
+
+        // Now iterate if it's an array
+        if (Array.isArray(galleryImages) && galleryImages.length > 0) {
+            galleryImages.forEach((image) => {
+                if (image instanceof File) {
+                    // New upload - send as file
+                    formData.append('gallery_images[]', image);
+                } else if (typeof image === 'string' && image) {
+                    // Existing image - extract filename from URL and track it
+                    // URL format: https://api.parlomo.co.uk/images/public-events/filename.jpg
+                    const filename = image.split('/').pop();
+                    if (filename) {
+                        existingImages.push(filename);
+                    }
+                }
+            });
+        }
+
+        // Send existing image filenames so backend knows which to keep
+        if (existingImages.length > 0) {
+            existingImages.forEach((filename, index) => {
+                formData.append(`existing_gallery_images[${index}]`, filename);
+            });
+        }
+    }
+
+    return formData;
+};
+
+/**
  * Public Events API Service
  */
 const publicEventsService = {
@@ -44,20 +179,42 @@ const publicEventsService = {
 
     /**
      * Get my events (organizer's events)
-     * @param {number} organizerId - Organizer user ID
-     * @param {Object} params - Additional query parameters
+     * Backend uses authenticated user's ID from token
+     * @param {Object} params - Query parameters
      * @returns {Promise} Organizer's events
      */
-    async getMyEvents(organizerId, params = {}) {
-        return this.getEvents({ organizerId, ...params });
+    async getMyEvents(params = {}) {
+        const queryString = new URLSearchParams(
+            Object.entries(params).reduce((acc, [key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    acc[key] = value;
+                }
+                return acc;
+            }, {})
+        ).toString();
+
+        const response = await ticketingAxios.get(
+            `/api/public-events/admin${queryString ? `?${queryString}` : ''}`
+        );
+        return response.data;
     },
 
     /**
-     * Get single event by ID
-     * @param {number} id - Event ID
+     * Get single event by slug (for public website pages)
+     * @param {string} slug - Event slug
      * @returns {Promise} Event details
      */
-    async getEvent(id) {
+    async getEventBySlug(slug) {
+        const response = await ticketingAxios.get(`/api/public-events/slug/${slug}`);
+        return response.data;
+    },
+
+    /**
+     * Get single event by ID (for panel/admin pages)
+     * @param {string} id - Event ID
+     * @returns {Promise} Event details
+     */
+    async getEventById(id) {
         const response = await ticketingAxios.get(`/api/public-events/${id}`);
         return response.data;
     },
@@ -68,7 +225,14 @@ const publicEventsService = {
      * @returns {Promise} Created event
      */
     async createEvent(eventData) {
-        const response = await ticketingAxios.post('/api/public-events', eventData);
+        const formData = transformToFormData(eventData);
+        // Must explicitly set multipart/form-data to override the default 'application/json'
+        // Axios will automatically add the boundary when it detects FormData
+        const response = await ticketingAxios.post('/api/public-events', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
 
@@ -79,7 +243,16 @@ const publicEventsService = {
      * @returns {Promise} Updated event
      */
     async updateEvent(id, updates) {
-        const response = await ticketingAxios.patch(`/api/public-events/${id}`, updates);
+        const formData = transformToFormData(updates);
+        // Laravel doesn't support PATCH with multipart, use POST with _method
+        formData.append('_method', 'PATCH');
+        // Must explicitly set multipart/form-data to override the default 'application/json'
+        // Axios will automatically add the boundary when it detects FormData
+        const response = await ticketingAxios.post(`/api/public-events/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
 
@@ -138,7 +311,7 @@ const publicEventsService = {
      * @returns {Promise} Categories list
      */
     async getCategories() {
-        const response = await ticketingAxios.get('/api/public-events/categories?activeOnly=true');
+        const response = await ticketingAxios.get('/api/public-events/categories?list=true');
         return response.data;
     },
 
@@ -243,12 +416,12 @@ const publicEventsService = {
     /**
      * Duplicate event
      * Creates a copy of an existing event as a draft
-     * @param {number} id - Event ID to duplicate
+     * @param {string} id - Event ID to duplicate
      * @returns {Promise} Duplicated event
      */
     async duplicateEvent(id) {
-        // Get the original event
-        const { event: originalEvent } = await this.getEvent(id);
+        // Get the original event by ID
+        const { event: originalEvent } = await this.getEventById(id);
 
         // Create a copy with modified title and draft status
         const duplicateData = {
@@ -280,7 +453,7 @@ const publicEventsService = {
             { field: 'organizerId', message: 'Organizer ID is required' },
             { field: 'title', message: 'Event title is required' },
             { field: 'description', message: 'Event description is required' },
-            { field: 'category', message: 'Event category is required' },
+            { field: 'category_id', message: 'Event category is required' },
             { field: 'startDate', message: 'Start date is required' },
             { field: 'timezone', message: 'Timezone is required' },
             { field: 'venueName', message: 'Venue name is required' },

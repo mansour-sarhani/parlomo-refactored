@@ -11,6 +11,8 @@ import Link from "next/link";
 import { useTicketing } from "@/hooks/useTicketing";
 import TicketTypeCard from "@/components/ticketing/TicketTypeCard";
 import CartSummary from "@/components/ticketing/CartSummary";
+import publicEventsService from "@/services/public-events.service";
+import { normalizeEventData } from "@/features/public-events/publicEventsSlice";
 
 export default function PublicEventPage() {
     const router = useRouter();
@@ -27,8 +29,11 @@ export default function PublicEventPage() {
         cart,
         cartCount,
         cartTotal,
-        loading: ticketsLoading,
-        fetchEventTicketing,
+        setTicketTypes,
+        startCheckout,
+        currentEventId,
+        promoCode,
+        loading: checkoutLoading,
     } = useTicketing();
 
     // Fetch event data
@@ -43,30 +48,82 @@ export default function PublicEventPage() {
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`/api/events/${eventName}`);
+            // Use service to fetch from external API by slug
+            const response = await publicEventsService.getEventBySlug(eventName);
 
-            if (!response.ok) {
-                throw new Error("Event not found");
-            }
+            // Normalize the API response (snake_case to camelCase)
+            const eventData = response.data || response.event;
+            const normalizedEvent = normalizeEventData(eventData);
+            setEvent(normalizedEvent);
 
-            const data = await response.json();
-            setEvent(data);
-
-            // Fetch ticketing data for this event
-            if (data && data.id) {
-                fetchEventTicketing(data.id);
+            // Normalize and store ticket_types in Redux for cart functionality
+            if (eventData.ticket_types && Array.isArray(eventData.ticket_types)) {
+                const normalizedTicketTypes = eventData.ticket_types.map(tt => ({
+                    id: tt.id,
+                    eventId: tt.event_id,
+                    name: tt.name,
+                    description: tt.description,
+                    price: tt.price,
+                    priceFormatted: tt.price_formatted,
+                    currency: tt.currency,
+                    capacity: tt.capacity,
+                    sold: tt.sold,
+                    reserved: tt.reserved,
+                    available: tt.available,
+                    isSoldOut: tt.is_sold_out,
+                    minPerOrder: tt.min_per_order,
+                    maxPerOrder: tt.max_per_order,
+                    salesStart: tt.sales_start,
+                    salesEnd: tt.sales_end,
+                    isOnSale: tt.is_on_sale,
+                    active: tt.active,
+                    visible: tt.visible,
+                    refundable: tt.refundable,
+                    transferAllowed: tt.transfer_allowed,
+                    seatSection: tt.seat_section,
+                    seatRow: tt.seat_row,
+                    seatNumbers: tt.seat_numbers,
+                    displayOrder: tt.display_order,
+                }));
+                setTicketTypes(
+                    eventData.id,
+                    normalizedTicketTypes,
+                    eventData.stats,
+                    eventData.service_charges || [],
+                    eventData.tax_rate || 0
+                );
             }
         } catch (err) {
             console.error("Error fetching event:", err);
-            setError(err.message);
+            setError(err.message || "Event not found");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleProceedToCheckout = () => {
-        if (cartCount > 0) {
-            router.push("/checkout");
+    const handleProceedToCheckout = async () => {
+        if (cartCount > 0 && currentEventId) {
+            try {
+                // Build cart items for the API
+                const cartItems = cart.map(item => ({
+                    ticketTypeId: item.ticketTypeId,
+                    quantity: item.quantity,
+                }));
+
+                // Start checkout session
+                const result = await startCheckout(currentEventId, cartItems, promoCode);
+
+                // Navigate to checkout if session was created successfully
+                if (result.payload?.data || result.payload?.session) {
+                    router.push("/checkout");
+                } else if (result.error) {
+                    console.error("Failed to start checkout:", result.error);
+                    alert(result.payload?.message || "Failed to start checkout. Please try again.");
+                }
+            } catch (err) {
+                console.error("Checkout error:", err);
+                alert("Failed to start checkout. Please try again.");
+            }
         }
     };
 
@@ -292,11 +349,6 @@ export default function PublicEventPage() {
                                             All tickets for this event have been sold.
                                         </p>
                                     </div>
-                                ) : ticketsLoading && ticketTypes.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                                        <p className="text-gray-600">Loading tickets...</p>
-                                    </div>
                                 ) : ticketTypes.length === 0 ? (
                                     <div className="text-center py-8">
                                         <Ticket className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -338,7 +390,12 @@ export default function PublicEventPage() {
                         <div className="space-y-6">
                             <div className="sticky top-24 space-y-6">
                                 {/* Cart Summary - Now at Top */}
-                                <CartSummary onCheckout={handleProceedToCheckout} />
+                                <CartSummary
+                                    onCheckout={handleProceedToCheckout}
+                                    serviceCharges={event?.serviceCharges || []}
+                                    taxRate={event?.taxRate || 0}
+                                    checkoutLoading={checkoutLoading}
+                                />
 
                                 {/* Event Quick Info */}
                                 <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
@@ -493,7 +550,12 @@ export default function PublicEventPage() {
                                     </button>
                                 </div>
                                 <div className="p-4">
-                                    <CartSummary onCheckout={handleProceedToCheckout} />
+                                    <CartSummary
+                                        onCheckout={handleProceedToCheckout}
+                                        serviceCharges={event?.serviceCharges || []}
+                                        taxRate={event?.taxRate || 0}
+                                        checkoutLoading={checkoutLoading}
+                                    />
                                 </div>
                             </div>
                         </div>

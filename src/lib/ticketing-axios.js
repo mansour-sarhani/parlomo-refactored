@@ -1,16 +1,32 @@
 import axios from "axios";
+import { STORAGE_KEYS } from "@/constants/config";
 
 /**
  * Ticketing API Axios Instance
- * Dedicated axios instance for ticketing features that use local Next.js API routes
- * This allows ticketing APIs to run on localhost while legacy APIs continue using the Laravel backend
+ *
+ * MIGRATION NOTE: This instance now connects to the main Laravel backend (api.parlomo.co.uk)
+ * instead of local Next.js API routes. The local configuration is preserved below (commented out)
+ * for easy revert if needed.
  */
 
 const isDebugLoggingEnabled = process.env.NEXT_PUBLIC_ENABLE_API_DEBUG === "true";
 
-// Create ticketing axios instance - always points to local Next.js API routes
+// =============================================================================
+// ORIGINAL LOCAL CONFIGURATION (commented out for revert capability)
+// =============================================================================
+// // Create ticketing axios instance - always points to local Next.js API routes
+// const ticketingAxios = axios.create({
+//     baseURL: process.env.DEV_BASE_URL || "http://localhost:3000",
+//     timeout: 30000,
+//     headers: {
+//         "Content-Type": "application/json",
+//     },
+// });
+// =============================================================================
+
+// NEW: Connect to main Laravel backend API
 const ticketingAxios = axios.create({
-    baseURL: process.env.DEV_BASE_URL || "http://localhost:3000",
+    baseURL: process.env.NEXT_PUBLIC_URL_KEY || process.env.NEXT_PUBLIC_LIVE_URL_KEY || "https://api.parlomo.co.uk",
     timeout: 30000,
     headers: {
         "Content-Type": "application/json",
@@ -19,10 +35,31 @@ const ticketingAxios = axios.create({
 
 /**
  * Request Interceptor
- * Logs requests in development mode
+ * Adds authentication token and logs requests in development mode
+ *
+ * NOTE: Now that we're connecting to the Laravel backend, we need to include
+ * the JWT token in the Authorization header (same as main axios instance)
  */
 ticketingAxios.interceptors.request.use(
     (config) => {
+        // Add JWT token for Laravel backend authentication
+        if (typeof window !== "undefined") {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEYS.USER);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed?.token) {
+                        config.headers = config.headers || {};
+                        config.headers.Authorization = `Bearer ${parsed.token}`;
+                    }
+                }
+            } catch (error) {
+                if (isDebugLoggingEnabled) {
+                    console.warn("⚠️ [Ticketing API Request] Failed to read auth token", error);
+                }
+            }
+        }
+
         // Log request in development
         if (isDebugLoggingEnabled) {
             console.log(`🎫 [Ticketing API Request] ${config.method?.toUpperCase()} ${config.url}`, {

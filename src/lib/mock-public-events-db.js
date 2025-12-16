@@ -257,7 +257,7 @@ export function createPublicEvent(eventData) {
         status: 'draft',
         isPublic: true,
         isOnline: false,
-        enableWaitlist: false,
+        waitlistEnabled: false,
         tags: [],
         galleryImages: [],
         taxInclusive: false,

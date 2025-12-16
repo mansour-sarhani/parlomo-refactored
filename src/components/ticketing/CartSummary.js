@@ -5,13 +5,64 @@
  * Displays cart contents, promo code input, and checkout button
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useCart, usePromoCode } from '@/hooks/useTicketing';
 import { Button } from '@/components/common/Button';
 import { ShoppingCart, Trash2, Tag, X, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function CartSummary({ onCheckout }) {
+/**
+ * Calculate fees based on service charges and tax rate
+ * @param {Array} serviceCharges - Array of service charge objects
+ * @param {number|string} taxRate - Tax rate percentage
+ * @param {number} subtotal - Cart subtotal in cents
+ * @param {number} ticketCount - Total number of tickets in cart
+ * @returns {Object} { fees: Array, totalFees: number, tax: number }
+ */
+function calculateFees(serviceCharges = [], taxRate = 0, subtotal, ticketCount) {
+    const fees = [];
+    let totalFees = 0;
+
+    // Calculate service charges
+    serviceCharges.forEach((charge) => {
+        let feeAmount = 0;
+
+        if (charge.type === 'per_ticket') {
+            if (charge.amountType === 'fixed_price') {
+                // Fixed amount per ticket (amount is in pounds, convert to cents)
+                feeAmount = Math.round(charge.amount * 100 * ticketCount);
+            } else if (charge.amountType === 'percentage') {
+                // Percentage of subtotal per ticket
+                feeAmount = Math.round((charge.amount / 100) * subtotal);
+            }
+        } else if (charge.type === 'per_cart') {
+            if (charge.amountType === 'fixed_price') {
+                // Fixed amount per cart (amount is in pounds, convert to cents)
+                feeAmount = Math.round(charge.amount * 100);
+            } else if (charge.amountType === 'percentage') {
+                // Percentage of subtotal per cart
+                feeAmount = Math.round((charge.amount / 100) * subtotal);
+            }
+        }
+
+        if (feeAmount > 0) {
+            fees.push({
+                id: charge._id || charge.id,
+                title: charge.title,
+                amount: feeAmount,
+            });
+            totalFees += feeAmount;
+        }
+    });
+
+    // Calculate tax
+    const taxRateNum = parseFloat(taxRate) || 0;
+    const tax = taxRateNum > 0 ? Math.round((taxRateNum / 100) * subtotal) : 0;
+
+    return { fees, totalFees, tax };
+}
+
+export default function CartSummary({ onCheckout, serviceCharges = [], taxRate = 0, checkoutLoading = false }) {
     const { cart, cartTotal, cartCount, removeFromCart, clearCart } = useCart();
     const {
         promoCode,
@@ -58,7 +109,17 @@ export default function CartSummary({ onCheckout }) {
 
     const subtotal = cartTotal;
     const discount = promoDiscount;
-    const total = subtotal - discount;
+
+    // Calculate the discounted subtotal (subtotal after promo discount)
+    const discountedSubtotal = Math.max(0, subtotal - discount);
+
+    // Calculate fees based on service charges and tax rate using DISCOUNTED subtotal
+    const { fees, totalFees, tax } = useMemo(
+        () => calculateFees(serviceCharges, taxRate, discountedSubtotal, cartCount),
+        [serviceCharges, taxRate, discountedSubtotal, cartCount]
+    );
+
+    const total = discountedSubtotal + totalFees + tax;
 
     if (cart.length === 0) {
         return (
@@ -200,10 +261,25 @@ export default function CartSummary({ onCheckout }) {
                         </div>
                     )}
 
-                    <div className="flex justify-between text-sm text-gray-500">
-                        <span>Fees</span>
-                        <span>Calculated at checkout</span>
-                    </div>
+                    {/* Service Charges */}
+                    {fees.map((fee) => (
+                        <div key={fee.id} className="flex justify-between text-sm">
+                            <span className="text-gray-600">{fee.title}</span>
+                            <span className="font-semibold text-gray-900">
+                                £{(fee.amount / 100).toFixed(2)}
+                            </span>
+                        </div>
+                    ))}
+
+                    {/* Tax */}
+                    {tax > 0 && (
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Tax ({taxRate}%)</span>
+                            <span className="font-semibold text-gray-900">
+                                £{(tax / 100).toFixed(2)}
+                            </span>
+                        </div>
+                    )}
 
                     <div className="border-t border-gray-200 pt-2 flex justify-between">
                         <span className="font-bold text-gray-900">Total</span>
@@ -220,9 +296,11 @@ export default function CartSummary({ onCheckout }) {
                         fullWidth
                         size="lg"
                         onClick={onCheckout}
+                        disabled={checkoutLoading}
+                        loading={checkoutLoading}
                         className="font-bold shadow-md hover:shadow-lg"
                     >
-                        Proceed to Checkout
+                        {checkoutLoading ? 'Starting Checkout...' : 'Proceed to Checkout'}
                     </Button>
                     <Button
                         variant="ghost"

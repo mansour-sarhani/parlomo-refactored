@@ -14,6 +14,7 @@ import {
     clearPromoCode,
     setCheckoutStep,
     resetTicketing,
+    setTicketTypes,
     // Async Thunks
     fetchEventTicketing,
     validatePromoCode,
@@ -34,6 +35,8 @@ import {
     selectEventStats,
     selectFinalTotal,
     selectCurrentEventId,
+    selectServiceCharges,
+    selectTaxRate,
 } from '@/features/ticketing/ticketingSlice';
 
 /**
@@ -57,6 +60,8 @@ export function useTicketing() {
     const eventStats = useSelector(selectEventStats);
     const finalTotal = useSelector(selectFinalTotal);
     const currentEventId = useSelector(selectCurrentEventId);
+    const serviceCharges = useSelector(selectServiceCharges);
+    const taxRate = useSelector(selectTaxRate);
 
     // Actions
     const handleAddToCart = (ticketTypeId, quantity) => {
@@ -91,13 +96,17 @@ export function useTicketing() {
         dispatch(resetTicketing());
     };
 
+    const handleSetTicketTypes = (eventId, ticketTypes, stats, serviceCharges, taxRate) => {
+        dispatch(setTicketTypes({ eventId, ticketTypes, stats, serviceCharges, taxRate }));
+    };
+
     // Async actions
     const handleFetchEventTicketing = (eventId) => {
         return dispatch(fetchEventTicketing(eventId));
     };
 
-    const handleValidatePromoCode = (code, cartTotal, ticketTypeIds) => {
-        return dispatch(validatePromoCode({ code, cartTotal, ticketTypeIds }));
+    const handleValidatePromoCode = (eventId, code, cartItems) => {
+        return dispatch(validatePromoCode({ eventId, code, cartItems }));
     };
 
     const handleStartCheckout = (eventId, cartItems, promoCode) => {
@@ -124,6 +133,8 @@ export function useTicketing() {
         eventStats,
         finalTotal,
         currentEventId,
+        serviceCharges,
+        taxRate,
         // Actions
         addToCart: handleAddToCart,
         updateQuantity: handleUpdateQuantity,
@@ -133,6 +144,7 @@ export function useTicketing() {
         clearPromoCode: handleClearPromoCode,
         setCheckoutStep: handleSetCheckoutStep,
         resetTicketing: handleResetTicketing,
+        setTicketTypes: handleSetTicketTypes,
         // Async actions
         fetchEventTicketing: handleFetchEventTicketing,
         validatePromoCode: handleValidatePromoCode,
@@ -170,7 +182,8 @@ export function usePromoCode() {
     const promoCode = useSelector(selectPromoCode);
     const promoDiscount = useSelector(selectPromoDiscount);
     const promoError = useSelector(selectPromoError);
-    const cartTotal = useSelector(selectCartTotal);
+    const cart = useSelector(selectCart);
+    const currentEventId = useSelector(selectCurrentEventId);
 
     return {
         promoCode,
@@ -179,7 +192,14 @@ export function usePromoCode() {
         hasPromo: !!promoCode && !promoError,
         setPromoCode: (code) => dispatch(setPromoCode(code)),
         clearPromoCode: () => dispatch(clearPromoCode()),
-        validatePromoCode: (code, ticketTypeIds) =>
-            dispatch(validatePromoCode({ code, cartTotal, ticketTypeIds })),
+        validatePromoCode: (code) =>
+            dispatch(validatePromoCode({
+                eventId: currentEventId,
+                code,
+                cartItems: cart.map(item => ({
+                    ticketTypeId: item.ticketTypeId,
+                    quantity: item.quantity,
+                })),
+            })),
     };
 }

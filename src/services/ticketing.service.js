@@ -56,10 +56,11 @@ const ticketingService = {
      * @returns {Promise} Updated ticket type
      */
     async updateTicketType(eventId, ticketTypeId, updates) {
-        const response = await ticketingAxios.patch(
-            `/api/ticketing/events/${eventId}/ticket-types`,
+        // Laravel requires POST with _method: PATCH for method spoofing
+        const response = await ticketingAxios.post(
+            `/api/ticketing/events/${eventId}/ticket-types/${ticketTypeId}`,
             {
-                ticketTypeId,
+                _method: 'PATCH',
                 ...updates,
             }
         );
@@ -69,16 +70,29 @@ const ticketingService = {
     /**
      * Validate promo code
      * @param {Object} params - Validation parameters
+     * @param {string} params.eventId - Event ID
      * @param {string} params.code - Promo code
-     * @param {number} params.cartTotal - Cart total in cents
-     * @param {number[]} params.ticketTypeIds - Ticket type IDs
+     * @param {Array} params.cartItems - Cart items with ticketTypeId and quantity
      * @returns {Promise} Validation result
      */
-    async validatePromoCode({ code, cartTotal, ticketTypeIds }) {
-        const response = await ticketingAxios.post('/api/ticketing/promo/validate', {
-            code,
-            cartTotal,
-            ticketTypeIds,
+    async validatePromoCode({ eventId, code, cartItems }) {
+        // Build FormData with the expected format
+        const formData = new FormData();
+        formData.append('event_id', eventId);
+        formData.append('code', code);
+
+        // Add cart items in the expected format: cart_items[0][ticket_type_id], cart_items[0][quantity]
+        if (cartItems && Array.isArray(cartItems)) {
+            cartItems.forEach((item, index) => {
+                formData.append(`cart_items[${index}][ticket_type_id]`, item.ticketTypeId);
+                formData.append(`cart_items[${index}][quantity]`, String(item.quantity));
+            });
+        }
+
+        const response = await ticketingAxios.post('/api/ticketing/promo/validate', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
         });
         return response.data;
     },
@@ -86,22 +100,83 @@ const ticketingService = {
     /**
      * Start checkout session
      * @param {Object} params - Checkout parameters
-     * @param {number} params.eventId - Event ID
-     * @param {Array} params.cartItems - Cart items
+     * @param {string} params.eventId - Event ID
+     * @param {Array} params.cartItems - Cart items with ticketTypeId and quantity
      * @param {string} params.promoCode - Promo code (optional)
      * @returns {Promise} Checkout session
      */
     async startCheckout({ eventId, cartItems, promoCode }) {
-        const response = await ticketingAxios.post('/api/ticketing/checkout/start', {
-            eventId,
-            cartItems,
-            promoCode,
+        // Build FormData with the expected format
+        const formData = new FormData();
+        formData.append('event_id', eventId);
+
+        // Add promo code if provided
+        if (promoCode) {
+            formData.append('promo_code', promoCode);
+        }
+
+        // Add cart items in the expected format
+        if (cartItems && Array.isArray(cartItems)) {
+            cartItems.forEach((item, index) => {
+                formData.append(`cart_items[${index}][ticket_type_id]`, item.ticketTypeId);
+                formData.append(`cart_items[${index}][quantity]`, String(item.quantity));
+            });
+        }
+
+        const response = await ticketingAxios.post('/api/ticketing/checkout/start', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
         });
         return response.data;
     },
 
     /**
-     * Complete checkout
+     * Create payment intent for Stripe
+     * @param {string} sessionId - Checkout session ID
+     * @returns {Promise} Payment intent data with client_secret
+     */
+    async createPaymentIntent(sessionId) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+
+        const response = await ticketingAxios.post('/api/ticketing/checkout/create-payment-intent', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    /**
+     * Verify payment and complete order
+     * @param {Object} params - Verification parameters
+     * @param {string} params.sessionId - Checkout session ID
+     * @param {string} params.paymentIntentId - Stripe payment intent ID
+     * @param {Object} params.buyerInfo - Buyer information
+     * @returns {Promise} Order confirmation with order details and download URL
+     */
+    async verifyPayment({ sessionId, paymentIntentId, buyerInfo }) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('payment_intent_id', paymentIntentId);
+        formData.append('buyer_info[first_name]', buyerInfo.firstName);
+        formData.append('buyer_info[last_name]', buyerInfo.lastName);
+        formData.append('buyer_info[email]', buyerInfo.email);
+        if (buyerInfo.phone) {
+            formData.append('buyer_info[phone]', buyerInfo.phone);
+        }
+
+        const response = await ticketingAxios.post('/api/ticketing/checkout/verify-payment', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    /**
+     * Complete checkout (legacy - use verifyPayment for Stripe payments)
      * @param {Object} checkoutData - Complete checkout data
      * @returns {Promise} Order confirmation
      */
@@ -117,6 +192,19 @@ const ticketingService = {
      */
     async getOrder(orderId) {
         const response = await ticketingAxios.get(`/api/ticketing/orders/${orderId}`);
+        return response.data;
+    },
+
+    /**
+     * Get guest order details (for order confirmation page)
+     * @param {string} orderId - Order ID
+     * @param {string} email - Customer email for verification
+     * @returns {Promise} Full order details including items, event, tickets, and download URL
+     */
+    async getGuestOrder(orderId, email) {
+        const response = await ticketingAxios.get(
+            `/api/ticketing/orders/guest/${orderId}?email=${encodeURIComponent(email)}`
+        );
         return response.data;
     },
 
@@ -351,11 +439,12 @@ const ticketingService = {
 
     /**
      * Create refund request
-     * @param {Object} data - Request data
+     * @param {Object} data - Request data (eventId, organizerId, reason, type)
      * @returns {Promise} Created request
      */
     async createRefundRequest(data) {
-        const response = await ticketingAxios.post('/api/financials/refunds', data);
+        const { eventId, ...rest } = data;
+        const response = await ticketingAxios.patch(`/api/financials/refunds/${eventId}`, rest);
         return response.data;
     },
 

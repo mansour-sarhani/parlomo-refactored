@@ -111,13 +111,13 @@ export function EventDateTimeStep({ formData, errors, onChange }) {
             {/* Doors Open */}
             <div>
                 <label htmlFor="doorsOpen" className="block text-sm font-medium mb-2" style={{ color: "var(--color-text-secondary)" }}>
-                    Doors Open Time (Optional)
+                    Doors Open Date & Time (Optional)
                 </label>
                 <input
                     id="doorsOpen"
-                    type="time"
-                    value={formData.doorsOpen || ""}
-                    onChange={(e) => onChange("doorsOpen", e.target.value || null)}
+                    type="datetime-local"
+                    value={formatDateTimeLocal(formData.doorsOpen)}
+                    onChange={(e) => onChange("doorsOpen", handleDateTimeChange(e.target.value))}
                     className="w-full px-4 py-2 rounded border"
                     style={{
                         backgroundColor: "var(--color-surface-primary)",
@@ -126,7 +126,7 @@ export function EventDateTimeStep({ formData, errors, onChange }) {
                     }}
                 />
                 <p className="text-xs mt-1" style={{ color: "var(--color-text-tertiary)" }}>
-                    What time will doors open for attendees?
+                    When will doors open for attendees?
                 </p>
             </div>
         </div>

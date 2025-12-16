@@ -216,7 +216,9 @@ const publicEventCategoriesSlice = createSlice({
             })
             .addCase(fetchPublicEventCategoryById.fulfilled, (state, action) => {
                 state.loading = false;
-                state.currentCategory = action.payload?.category || null;
+                // API returns { success: true, data: {...category} }
+                // response.data from axios gives us { success, data }, so we need action.payload.data
+                state.currentCategory = action.payload?.data || action.payload || null;
             })
             .addCase(fetchPublicEventCategoryById.rejected, (state, action) => {
                 state.loading = false;

@@ -75,25 +75,25 @@ export function EventDetailsStep({ formData, errors, onChange }) {
                 </label>
                 <select
                     id="category"
-                    value={typeof formData.category === 'object' ? formData.category?.slug : (formData.category || "")}
-                    onChange={(e) => onChange("category", e.target.value)}
+                    value={typeof formData.category_id === 'object' ? formData.category_id?.id : (formData.category_id || "")}
+                    onChange={(e) => onChange("category_id", e.target.value)}
                     className="w-full px-4 py-2 rounded border"
                     style={{
                         backgroundColor: "var(--color-surface-primary)",
-                        borderColor: errors.category ? "var(--color-error)" : "var(--color-border)",
+                        borderColor: errors.category_id ? "var(--color-error)" : "var(--color-border)",
                         color: "var(--color-text-primary)",
                     }}
                 >
                     <option value="">Select a category</option>
                     {categories.map((cat) => (
-                        <option key={cat.id} value={cat.slug}>
+                        <option key={cat.id} value={cat.id}>
                             {cat.name}
                         </option>
                     ))}
                 </select>
-                {errors.category && (
+                {errors.category_id && (
                     <p className="text-sm mt-1" style={{ color: "var(--color-error)" }}>
-                        {errors.category}
+                        {errors.category_id}
                     </p>
                 )}
             </div>

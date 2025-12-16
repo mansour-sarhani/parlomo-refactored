@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import * as LucideIcons from "lucide-react";
 import { Table, TableHeader, TableHeaderCell, TableRow, TableCell } from "@/components/tables";
 import { EditAction, DeleteAction } from "@/components/tables/TableActions";
@@ -86,12 +85,12 @@ export function PublicEventCategoryTable({ categories, onEdit, onDelete, onStatu
                                         className="relative w-16 h-16 overflow-hidden rounded-lg border"
                                         style={{ borderColor: "var(--color-border)" }}
                                     >
-                                        <Image
-                                            src={category.image}
+                                        <img
+                                            src={category.image.startsWith('http')
+                                                ? category.image
+                                                : `${process.env.NEXT_PUBLIC_URL_KEY || 'https://api.parlomo.co.uk'}${category.path || '/images/public-event-category'}/${category.image}`}
                                             alt={category.name || "Category image"}
-                                            fill
-                                            sizes="64px"
-                                            className="object-cover"
+                                            className="w-full h-full object-cover"
                                         />
                                     </div>
                                 ) : (

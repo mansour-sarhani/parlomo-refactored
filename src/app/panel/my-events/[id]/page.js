@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ContentWrapper } from "@/components/layout/ContentWrapper";
 import { Card, CardHeader } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
+import { ConfirmModal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppDispatch } from "@/lib/hooks";
 import {
@@ -15,10 +16,11 @@ import {
     unpublishEvent,
     cancelEvent,
     duplicateEvent,
-    deleteEvent
+    deleteEvent,
+    normalizeEventData
 } from "@/features/public-events/publicEventsSlice";
 import {
-    ChevronLeft, Edit, Ticket, Copy, Trash2,
+    ChevronLeft, Ticket, Copy, Trash2,
     Calendar, MapPin, Users, Globe, DollarSign,
     BarChart3, ExternalLink, AlertTriangle, PlayCircle,
     Facebook, Instagram, MessageCircle
@@ -39,6 +41,7 @@ export default function ViewEventPage({ params }) {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [pendingStatus, setPendingStatus] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null });
 
     useEffect(() => {
         if (!id) return;
@@ -49,8 +52,9 @@ export default function ViewEventPage({ params }) {
                     dispatch(fetchEventById(id)).unwrap(),
                     dispatch(fetchEventStats(id)).unwrap()
                 ]);
-                setEvent(eventResult.event);
-                setStats(statsResult.stats);
+                const eventData = eventResult.data || eventResult.event;
+                setEvent(normalizeEventData(eventData));
+                setStats(statsResult.stats || statsResult.data);
             } catch (err) {
                 toast.error("Failed to load event details");
             } finally {
@@ -63,15 +67,16 @@ export default function ViewEventPage({ params }) {
 
     const handleUpdateStatus = async () => {
         if (!pendingStatus || pendingStatus === event.status) return;
-        
+
         setActionLoading(true);
         try {
             const result = await dispatch(updateEvent({
                 id,
                 updates: { status: pendingStatus }
             })).unwrap();
-            
-            setEvent(result.event);
+
+            const eventData = result.data || result.event;
+            setEvent(normalizeEventData(eventData));
             setPendingStatus(null);
             toast.success(`Event status updated to ${pendingStatus.replace('_', ' ')}`);
         } catch (error) {
@@ -82,9 +87,26 @@ export default function ViewEventPage({ params }) {
         }
     };
 
-    const handleStatusChange = async (action) => {
-        if (!confirm(`Are you sure you want to ${action} this event?`)) return;
+    const openConfirmModal = (action) => {
+        setConfirmModal({ isOpen: true, action });
+    };
 
+    const closeConfirmModal = () => {
+        setConfirmModal({ isOpen: false, action: null });
+    };
+
+    const handleConfirmAction = async () => {
+        const action = confirmModal.action;
+        closeConfirmModal();
+
+        if (action === 'delete') {
+            await executeDelete();
+        } else {
+            await executeStatusChange(action);
+        }
+    };
+
+    const executeStatusChange = async (action) => {
         setActionLoading(true);
         try {
             let result;
@@ -98,7 +120,8 @@ export default function ViewEventPage({ params }) {
                 result = await dispatch(cancelEvent(id)).unwrap();
                 toast.success("Event cancelled successfully");
             }
-            setEvent(result.event);
+            const eventData = result.data || result.event;
+            setEvent(normalizeEventData(eventData));
         } catch (error) {
             toast.error(error.error || `Failed to ${action} event`);
         } finally {
@@ -110,8 +133,9 @@ export default function ViewEventPage({ params }) {
         setActionLoading(true);
         try {
             const result = await dispatch(duplicateEvent(id)).unwrap();
+            const eventData = result.data || result.event;
             toast.success("Event duplicated successfully");
-            router.push(`/panel/my-events/${result.event.id}/edit`);
+            router.push(`/panel/my-events/${eventData.id}/edit/details`);
         } catch (error) {
             toast.error(error.error || "Failed to duplicate event");
         } finally {
@@ -119,9 +143,7 @@ export default function ViewEventPage({ params }) {
         }
     };
 
-    const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
-
+    const executeDelete = async () => {
         setActionLoading(true);
         try {
             await dispatch(deleteEvent(id)).unwrap();
@@ -131,6 +153,36 @@ export default function ViewEventPage({ params }) {
             toast.error(error.error || "Failed to delete event");
             setActionLoading(false);
         }
+    };
+
+    const getConfirmModalConfig = () => {
+        const configs = {
+            publish: {
+                title: 'Publish Event',
+                message: 'Are you sure you want to publish this event? It will be visible to the public.',
+                confirmText: 'Publish',
+                variant: 'primary'
+            },
+            unpublish: {
+                title: 'Unpublish Event',
+                message: 'Are you sure you want to unpublish this event? It will no longer be visible to the public.',
+                confirmText: 'Unpublish',
+                variant: 'secondary'
+            },
+            cancel: {
+                title: 'Cancel Event',
+                message: 'Are you sure you want to cancel this event? This will notify all attendees.',
+                confirmText: 'Cancel Event',
+                variant: 'danger'
+            },
+            delete: {
+                title: 'Delete Event',
+                message: 'Are you sure you want to delete this event? This action cannot be undone.',
+                confirmText: 'Delete',
+                variant: 'danger'
+            }
+        };
+        return configs[confirmModal.action] || {};
     };
 
     if (loading) {
@@ -193,7 +245,7 @@ export default function ViewEventPage({ params }) {
                 <div className="flex items-center gap-2">
                     {event.status === 'draft' && (
                         <Button
-                            onClick={() => handleStatusChange('publish')}
+                            onClick={() => openConfirmModal('publish')}
                             loading={actionLoading}
                             className="bg-green-600 hover:bg-green-700 text-white"
                         >
@@ -211,19 +263,13 @@ export default function ViewEventPage({ params }) {
                             </Button>
                             <Button
                                 variant="secondary"
-                                onClick={() => handleStatusChange('unpublish')}
+                                onClick={() => openConfirmModal('unpublish')}
                                 loading={actionLoading}
                             >
                                 Unpublish
                             </Button>
                         </>
                     )}
-                    <Button
-                        onClick={() => router.push(`/panel/my-events/${event.id}/edit`)}
-                        icon={<Edit className="w-4 h-4" />}
-                    >
-                        Edit
-                    </Button>
                 </div>
             </div>
 
@@ -494,7 +540,7 @@ export default function ViewEventPage({ params }) {
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-red-600 hover:bg-red-50 hover:border-red-200"
-                                    onClick={() => handleStatusChange('cancel')}
+                                    onClick={() => openConfirmModal('cancel')}
                                     loading={actionLoading}
                                     icon={<AlertTriangle className="w-4 h-4" />}
                                 >
@@ -504,7 +550,7 @@ export default function ViewEventPage({ params }) {
                             <Button
                                 variant="outline"
                                 className="w-full justify-start text-red-600 hover:bg-red-50 hover:border-red-200"
-                                onClick={handleDelete}
+                                onClick={() => openConfirmModal('delete')}
                                 loading={actionLoading}
                                 icon={<Trash2 className="w-4 h-4" />}
                             >
@@ -573,6 +619,15 @@ export default function ViewEventPage({ params }) {
                     </Card>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeConfirmModal}
+                onConfirm={handleConfirmAction}
+                loading={actionLoading}
+                {...getConfirmModalConfig()}
+            />
         </ContentWrapper >
     );
 }

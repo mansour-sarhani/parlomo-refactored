@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ContentWrapper } from "@/components/layout/ContentWrapper";
 import { Card, CardHeader } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import ticketingService from "@/services/ticketing.service";
 import { toast } from "sonner";
@@ -20,6 +21,9 @@ export default function EventFinancialsPage({ params }) {
     const [settlements, setSettlements] = useState([]);
     const [refunds, setRefunds] = useState([]);
     const [requestLoading, setRequestLoading] = useState(false);
+    const [refundModalOpen, setRefundModalOpen] = useState(false);
+    const [refundReason, setRefundReason] = useState("");
+    const [settlementModalOpen, setSettlementModalOpen] = useState(false);
 
     useEffect(() => {
         if (!id || !user) return;
@@ -32,10 +36,12 @@ export default function EventFinancialsPage({ params }) {
                     ticketingService.getRefundRequests(user.id)
                 ]);
 
-                setFinancials(financialsData.financials);
+                setFinancials(financialsData.data || financialsData.financials);
                 // Filter requests for this event
-                setSettlements(settlementsData.settlementRequests.filter(req => req.eventId === id));
-                setRefunds(refundsData.refundRequests.filter(req => req.eventId === id));
+                const settlements = settlementsData.data || settlementsData.settlementRequests || [];
+                const refunds = refundsData.data || refundsData.refundRequests || [];
+                setSettlements(Array.isArray(settlements) ? settlements.filter(req => req.eventId === id) : []);
+                setRefunds(Array.isArray(refunds) ? refunds.filter(req => req.eventId === id) : []);
             } catch (error) {
                 console.error("Error loading financials:", error);
                 toast.error("Failed to load financial data");
@@ -47,27 +53,32 @@ export default function EventFinancialsPage({ params }) {
         loadData();
     }, [id, user]);
 
-    const handleRequestSettlement = async () => {
-        if (!financials || financials.netRevenue <= 0) {
-            toast.error("No revenue available for settlement");
-            return;
-        }
+    const handleOpenSettlementModal = () => {
+        setSettlementModalOpen(true);
+    };
 
-        if (!confirm(`Request settlement for ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials.netRevenue)}?`)) return;
+    const handleCloseSettlementModal = () => {
+        setSettlementModalOpen(false);
+    };
+
+    const handleSubmitSettlement = async () => {
+        const netRev = financials?.netRevenue || financials?.net_revenue || 0;
 
         setRequestLoading(true);
         try {
             const result = await ticketingService.createSettlementRequest({
                 organizerId: user.id,
                 eventId: id,
-                amount: financials.netRevenue
+                amount: netRev
             });
 
             if (result.success) {
                 toast.success("Settlement request submitted");
+                handleCloseSettlementModal();
                 // Refresh list
                 const settlementsData = await ticketingService.getSettlementRequests(user.id);
-                setSettlements(settlementsData.settlementRequests.filter(req => req.eventId === id));
+                const settlementsList = settlementsData.data || settlementsData.settlementRequests || [];
+                setSettlements(Array.isArray(settlementsList) ? settlementsList.filter(req => req.eventId === id) : []);
             }
         } catch (error) {
             toast.error("Failed to request settlement");
@@ -76,24 +87,38 @@ export default function EventFinancialsPage({ params }) {
         }
     };
 
-    const handleRequestRefund = async () => {
-        const reason = prompt("Please enter the reason for this refund request (e.g., Event Cancellation):");
-        if (!reason) return;
+    const handleOpenRefundModal = () => {
+        setRefundReason("");
+        setRefundModalOpen(true);
+    };
+
+    const handleCloseRefundModal = () => {
+        setRefundModalOpen(false);
+        setRefundReason("");
+    };
+
+    const handleSubmitRefund = async () => {
+        if (!refundReason.trim()) {
+            toast.error("Please enter a reason for the refund request");
+            return;
+        }
 
         setRequestLoading(true);
         try {
             const result = await ticketingService.createRefundRequest({
                 organizerId: user.id,
                 eventId: id,
-                reason: reason,
-                type: 'EVENT_CANCELLATION' // Default for now
+                reason: refundReason.trim(),
+                type: 'EVENT_CANCELLATION'
             });
 
             if (result.success) {
                 toast.success("Refund request submitted");
+                handleCloseRefundModal();
                 // Refresh list
                 const refundsData = await ticketingService.getRefundRequests(user.id);
-                setRefunds(refundsData.refundRequests.filter(req => req.eventId === id));
+                const refundsList = refundsData.data || refundsData.refundRequests || [];
+                setRefunds(Array.isArray(refundsList) ? refundsList.filter(req => req.eventId === id) : []);
             }
         } catch (error) {
             toast.error("Failed to request refund");
@@ -136,7 +161,7 @@ export default function EventFinancialsPage({ params }) {
                         <div>
                             <p className="text-sm text-gray-500">Gross Revenue</p>
                             <p className="text-xl font-bold">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.totalRevenue || 0)}
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.totalRevenue || financials?.total_sales || 0)}
                             </p>
                         </div>
                     </div>
@@ -149,7 +174,7 @@ export default function EventFinancialsPage({ params }) {
                         <div>
                             <p className="text-sm text-gray-500">Platform Fees</p>
                             <p className="text-xl font-bold">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.totalFees || 0)}
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.totalFees || financials?.total_refunded || 0)}
                             </p>
                         </div>
                     </div>
@@ -162,7 +187,7 @@ export default function EventFinancialsPage({ params }) {
                         <div>
                             <p className="text-sm text-gray-500">Net Revenue (Payout)</p>
                             <p className="text-xl font-bold">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.netRevenue || 0)}
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.netRevenue || financials?.net_revenue || 0)}
                             </p>
                         </div>
                     </div>
@@ -173,10 +198,10 @@ export default function EventFinancialsPage({ params }) {
             <Card header={
                 <div className="flex items-center justify-between">
                     <CardHeader title="Settlement Requests" />
-                    <Button 
-                        onClick={handleRequestSettlement} 
+                    <Button
+                        onClick={handleOpenSettlementModal}
                         loading={requestLoading}
-                        disabled={!financials || financials.netRevenue <= 0}
+                        // disabled={!financials || ((financials.netRevenue || financials.net_revenue || 0) <= 0)}
                         icon={<Plus className="w-4 h-4" />}
                     >
                         Request Settlement
@@ -228,10 +253,10 @@ export default function EventFinancialsPage({ params }) {
             <Card header={
                 <div className="flex items-center justify-between">
                     <CardHeader title="Refund Requests" />
-                    <Button 
+                    <Button
                         variant="outline"
                         className="text-red-600 hover:bg-red-50 hover:border-red-200"
-                        onClick={handleRequestRefund} 
+                        onClick={handleOpenRefundModal}
                         loading={requestLoading}
                         icon={<AlertCircle className="w-4 h-4" />}
                     >
@@ -275,6 +300,68 @@ export default function EventFinancialsPage({ params }) {
                     </div>
                 )}
             </Card>
+
+            {/* Settlement Request Modal */}
+            <Modal
+                isOpen={settlementModalOpen}
+                onClose={handleCloseSettlementModal}
+                title="Request Settlement"
+                size="sm"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={handleCloseSettlementModal} disabled={requestLoading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSubmitSettlement} loading={requestLoading}>
+                            Confirm Request
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        You are about to request a settlement for the following amount:
+                    </p>
+                    <p className="text-2xl font-bold text-center">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GBP' }).format(financials?.netRevenue || financials?.net_revenue || 0)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        Once submitted, our team will review and process your settlement request.
+                    </p>
+                </div>
+            </Modal>
+
+            {/* Refund Request Modal */}
+            <Modal
+                isOpen={refundModalOpen}
+                onClose={handleCloseRefundModal}
+                title="Request Refund / Cancellation"
+                size="sm"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={handleCloseRefundModal} disabled={requestLoading}>
+                            Cancel
+                        </Button>
+                        <Button variant="danger" onClick={handleSubmitRefund} loading={requestLoading}>
+                            Submit Request
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        Please enter the reason for this refund request (e.g., Event Cancellation).
+                    </p>
+                    <textarea
+                        value={refundReason}
+                        onChange={(e) => setRefundReason(e.target.value)}
+                        placeholder="Enter your reason here..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                        rows={4}
+                        disabled={requestLoading}
+                    />
+                </div>
+            </Modal>
         </ContentWrapper>
     );
 }

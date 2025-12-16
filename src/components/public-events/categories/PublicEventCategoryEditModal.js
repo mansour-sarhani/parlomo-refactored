@@ -5,7 +5,6 @@ import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import * as LucideIcons from "lucide-react";
 import { ImageIcon } from "lucide-react";
-import Image from "next/image";
 import { toast } from "sonner";
 import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/common/Button";
@@ -104,7 +103,8 @@ export function PublicEventCategoryEditModal({
                 changes.status = newStatus;
             }
 
-            if (values.sortOrder !== currentCategory.sortOrder) {
+            const currentSortOrder = currentCategory.sortOrder ?? currentCategory.sort_order ?? 0;
+            if (values.sortOrder !== currentSortOrder) {
                 changes.sortOrder = values.sortOrder;
             }
 
@@ -180,7 +180,17 @@ export function PublicEventCategoryEditModal({
     };
 
     // Determine what image to show
-    const displayImage = imagePreview || (!removeExistingImage && currentCategory?.image);
+    // Build full image URL from path + image filename if needed
+    const getFullImageUrl = (category) => {
+        if (!category?.image) return null;
+        if (category.image.startsWith('http')) {
+            return category.image;
+        }
+        const baseUrl = process.env.NEXT_PUBLIC_URL_KEY || 'https://api.parlomo.co.uk';
+        return `${baseUrl}${category.path || '/images/public-event-category'}/${category.image}`;
+    };
+    const existingImage = !removeExistingImage ? getFullImageUrl(currentCategory) : null;
+    const displayImage = imagePreview || existingImage;
 
     return (
         <>
@@ -205,7 +215,7 @@ export function PublicEventCategoryEditModal({
                             icon: currentCategory.icon || "MoreHorizontal",
                             description: currentCategory.description || "",
                             isActive: currentCategory.status === "active",
-                            sortOrder: currentCategory.sortOrder ?? 0,
+                            sortOrder: currentCategory.sortOrder ?? currentCategory.sort_order ?? 0,
                             image: null,
                         }}
                         validationSchema={validationSchema}
@@ -291,21 +301,11 @@ export function PublicEventCategoryEditModal({
                                                 }}
                                             >
                                                 {displayImage ? (
-                                                    imagePreview ? (
-                                                        <img
-                                                            src={imagePreview}
-                                                            alt="Preview"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <Image
-                                                            src={displayImage}
-                                                            alt={currentCategory.name || "Category"}
-                                                            fill
-                                                            sizes="80px"
-                                                            className="object-cover"
-                                                        />
-                                                    )
+                                                    <img
+                                                        src={displayImage}
+                                                        alt={imagePreview ? "Preview" : (currentCategory.name || "Category")}
+                                                        className="w-full h-full object-cover"
+                                                    />
                                                 ) : (
                                                     <ImageIcon
                                                         className="w-8 h-8"
@@ -420,20 +420,18 @@ export function PublicEventCategoryEditModal({
             </Modal>
 
             {/* Image Preview Modal */}
-            {imagePreviewOpen && currentCategory?.image && (
+            {imagePreviewOpen && existingImage && (
                 <Modal
                     isOpen={imagePreviewOpen}
                     onClose={() => setImagePreviewOpen(false)}
                     title={currentCategory?.name || "Category image"}
                     size="lg"
                 >
-                    <div className="relative w-full h-[400px]">
-                        <Image
-                            src={currentCategory.image}
+                    <div className="flex items-center justify-center w-full h-[400px]">
+                        <img
+                            src={existingImage}
                             alt={currentCategory?.name || "Category image"}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 800px"
-                            className="object-contain"
+                            className="max-w-full max-h-full object-contain"
                         />
                     </div>
                 </Modal>
