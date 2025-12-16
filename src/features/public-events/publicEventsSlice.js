@@ -6,6 +6,119 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import publicEventsService from '@/services/public-events.service';
 
+// ==================== HELPERS ====================
+
+/**
+ * Build full image URL from path and filename
+ */
+const buildImageUrl = (path, filename) => {
+    if (!filename) return null;
+    if (filename.startsWith('http')) return filename;
+    const baseUrl = process.env.NEXT_PUBLIC_URL_KEY || 'https://api.parlomo.co.uk';
+    return `${baseUrl}${path || '/images/public-events'}/${filename}`;
+};
+
+/**
+ * Parse gallery images - handles JSON string or array
+ */
+const parseGalleryImages = (galleryImages) => {
+    if (!galleryImages) return [];
+    if (Array.isArray(galleryImages)) return galleryImages;
+    if (typeof galleryImages === 'string') {
+        try {
+            const parsed = JSON.parse(galleryImages);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+};
+
+/**
+ * Convert age restriction integer to form string format
+ * Backend stores: 18 (integer)
+ * Form expects: '18+' (string)
+ */
+const normalizeAgeRestriction = (ageRestriction) => {
+    if (ageRestriction === null || ageRestriction === undefined || ageRestriction === 0) {
+        return 'all_ages';
+    }
+    // If it's already a string in the expected format, return as-is
+    if (typeof ageRestriction === 'string') {
+        return ageRestriction;
+    }
+    // Convert integer to string format (e.g., 18 -> '18+')
+    return `${ageRestriction}+`;
+};
+
+/**
+ * Normalize event data from API (snake_case) to frontend (camelCase)
+ */
+export const normalizeEventData = (event) => ({
+    id: event.id,
+    categoryId: event.category_id,
+    organizerId: event.organizer_id,
+    title: event.title,
+    slug: event.slug,
+    description: event.description,
+    status: event.status,
+    eventType: event.event_type,
+    startDate: event.start_date,
+    endDate: event.end_date,
+    bookingDeadline: event.booking_deadline,
+    doorsOpen: event.doors_open,
+    timezone: event.timezone,
+    venueName: event.venue_name,
+    venueCapacity: event.venue_capacity,
+    venueAddress: event.address,
+    location: {
+        address: event.address,
+        city: event.city,
+        state: event.state,
+        country: event.country,
+        postcode: event.postcode,
+        coordinates: {
+            lat: event.lat != null ? parseFloat(event.lat) : null,
+            lng: event.lng != null ? parseFloat(event.lng) : null,
+        },
+    },
+    globalCapacity: event.global_capacity,
+    currency: event.currency,
+    waitlistEnabled: event.waitlist_enabled,
+    coverImage: buildImageUrl(event.path, event.cover_image),
+    galleryImages: parseGalleryImages(event.gallery_images).map(img => buildImageUrl(event.path, img)),
+    videoUrl: event.video_url,
+    ageRestriction: normalizeAgeRestriction(event.age_restriction),
+    showRemainingTickets: event.show_remaining_tickets || false,
+    refundPolicy: event.refund_policy,
+    termsAndConditions: event.terms_and_conditions,
+    taxRate: event.tax_rate,
+    serviceCharges: event.service_charges,
+    tags: event.tags,
+    featured: event.featured,
+    organizerName: event.organizer_name,
+    organizerEmail: event.organizer_email,
+    organizerPhone: event.organizer_phone,
+    organizerWebsite: event.organizer_website,
+    organizerFacebook: event.organizer_facebook,
+    organizerInstagram: event.organizer_instagram,
+    organizerWhatsApp: event.organizer_whatsapp,
+    category: event.category,
+    organizer: {
+        id: event.organizer?.id || event.organizer_id,
+        name: event.organizer_name || event.organizer?.name,
+        email: event.organizer_email || event.organizer?.email,
+        phone: event.organizer_phone || event.organizer?.phone,
+        website: event.organizer_website || event.organizer?.website,
+        facebook: event.organizer_facebook || event.organizer?.facebook,
+        instagram: event.organizer_instagram || event.organizer?.instagram,
+        whatsApp: event.organizer_whatsapp || event.organizer?.whatsapp,
+    },
+    createdAt: event.created_at,
+    updatedAt: event.updated_at,
+});
+
 // ==================== ASYNC THUNKS ====================
 
 /**
@@ -13,9 +126,9 @@ import publicEventsService from '@/services/public-events.service';
  */
 export const fetchMyEvents = createAsyncThunk(
     'publicEvents/fetchMyEvents',
-    async ({ organizerId, ...params }, { rejectWithValue }) => {
+    async (params, { rejectWithValue }) => {
         try {
-            return await publicEventsService.getMyEvents(organizerId, params);
+            return await publicEventsService.getMyEvents(params);
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: 'Failed to fetch events' });
         }
@@ -23,13 +136,13 @@ export const fetchMyEvents = createAsyncThunk(
 );
 
 /**
- * Fetch single event by ID
+ * Fetch single event by ID (for panel/admin pages)
  */
 export const fetchEventById = createAsyncThunk(
     'publicEvents/fetchEventById',
     async (eventId, { rejectWithValue }) => {
         try {
-            return await publicEventsService.getEvent(eventId);
+            return await publicEventsService.getEventById(eventId);
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: 'Failed to fetch event' });
         }
@@ -65,7 +178,9 @@ export const updateEvent = createAsyncThunk(
         try {
             return await publicEventsService.updateEvent(id, updates);
         } catch (error) {
-            return rejectWithValue(error.response?.data || { error: 'Failed to update event' });
+            // Handle both axios interceptor format and raw axios error format
+            const errorMessage = error.message || error.response?.data?.message || error.response?.data?.error || 'Failed to update event';
+            return rejectWithValue({ error: errorMessage });
         }
     }
 );
@@ -294,8 +409,13 @@ const publicEventsSlice = createSlice({
             })
             .addCase(fetchMyEvents.fulfilled, (state, action) => {
                 state.loading = false;
-                state.myEvents = action.payload.events || [];
-                state.pagination = action.payload.pagination || state.pagination;
+                state.myEvents = (action.payload.data || []).map(normalizeEventData);
+                state.pagination = action.payload.meta ? {
+                    page: action.payload.meta.current_page,
+                    limit: action.payload.meta.per_page,
+                    total: action.payload.meta.total,
+                    totalPages: action.payload.meta.last_page,
+                } : state.pagination;
             })
             .addCase(fetchMyEvents.rejected, (state, action) => {
                 state.loading = false;
@@ -310,7 +430,7 @@ const publicEventsSlice = createSlice({
             })
             .addCase(fetchEventById.fulfilled, (state, action) => {
                 state.loading = false;
-                state.currentEvent = action.payload.event;
+                state.currentEvent = action.payload.data || action.payload.event;
             })
             .addCase(fetchEventById.rejected, (state, action) => {
                 state.loading = false;
@@ -326,8 +446,10 @@ const publicEventsSlice = createSlice({
             })
             .addCase(createEvent.fulfilled, (state, action) => {
                 state.creating = false;
-                state.currentEvent = action.payload.event;
-                state.myEvents.unshift(action.payload.event);
+                const event = action.payload.data || action.payload.event;
+                const normalizedEvent = normalizeEventData(event);
+                state.currentEvent = normalizedEvent;
+                state.myEvents.unshift(normalizedEvent);
                 state.successMessage = 'Event created successfully';
             })
             .addCase(createEvent.rejected, (state, action) => {
@@ -344,12 +466,14 @@ const publicEventsSlice = createSlice({
             })
             .addCase(updateEvent.fulfilled, (state, action) => {
                 state.updating = false;
-                state.currentEvent = action.payload.event;
+                const event = action.payload.data || action.payload.event;
+                const normalizedEvent = normalizeEventData(event);
+                state.currentEvent = normalizedEvent;
 
                 // Update in myEvents list
-                const index = state.myEvents.findIndex(e => e.id === action.payload.event.id);
+                const index = state.myEvents.findIndex(e => e.id === event.id);
                 if (index !== -1) {
-                    state.myEvents[index] = action.payload.event;
+                    state.myEvents[index] = normalizedEvent;
                 }
 
                 state.successMessage = 'Event updated successfully';
@@ -391,12 +515,14 @@ const publicEventsSlice = createSlice({
             })
             .addCase(publishEvent.fulfilled, (state, action) => {
                 state.updating = false;
-                state.currentEvent = action.payload.event;
+                const event = action.payload.data || action.payload.event;
+                const normalizedEvent = normalizeEventData(event);
+                state.currentEvent = normalizedEvent;
 
                 // Update in myEvents list
-                const index = state.myEvents.findIndex(e => e.id === action.payload.event.id);
+                const index = state.myEvents.findIndex(e => e.id === event.id);
                 if (index !== -1) {
-                    state.myEvents[index] = action.payload.event;
+                    state.myEvents[index] = normalizedEvent;
                 }
 
                 state.successMessage = 'Event published successfully';
@@ -414,12 +540,14 @@ const publicEventsSlice = createSlice({
             })
             .addCase(unpublishEvent.fulfilled, (state, action) => {
                 state.updating = false;
-                state.currentEvent = action.payload.event;
+                const event = action.payload.data || action.payload.event;
+                const normalizedEvent = normalizeEventData(event);
+                state.currentEvent = normalizedEvent;
 
                 // Update in myEvents list
-                const index = state.myEvents.findIndex(e => e.id === action.payload.event.id);
+                const index = state.myEvents.findIndex(e => e.id === event.id);
                 if (index !== -1) {
-                    state.myEvents[index] = action.payload.event;
+                    state.myEvents[index] = normalizedEvent;
                 }
 
                 state.successMessage = 'Event unpublished successfully';
@@ -437,12 +565,14 @@ const publicEventsSlice = createSlice({
             })
             .addCase(cancelEvent.fulfilled, (state, action) => {
                 state.updating = false;
-                state.currentEvent = action.payload.event;
+                const event = action.payload.data || action.payload.event;
+                const normalizedEvent = normalizeEventData(event);
+                state.currentEvent = normalizedEvent;
 
                 // Update in myEvents list
-                const index = state.myEvents.findIndex(e => e.id === action.payload.event.id);
+                const index = state.myEvents.findIndex(e => e.id === event.id);
                 if (index !== -1) {
-                    state.myEvents[index] = action.payload.event;
+                    state.myEvents[index] = normalizedEvent;
                 }
 
                 state.successMessage = 'Event cancelled successfully';
@@ -475,7 +605,7 @@ const publicEventsSlice = createSlice({
             })
             .addCase(fetchCategories.fulfilled, (state, action) => {
                 state.loading = false;
-                state.categories = action.payload.categories || [];
+                state.categories = action.payload.data || action.payload.categories || [];
             })
             .addCase(fetchCategories.rejected, (state, action) => {
                 state.loading = false;
@@ -490,8 +620,10 @@ const publicEventsSlice = createSlice({
             })
             .addCase(duplicateEvent.fulfilled, (state, action) => {
                 state.creating = false;
-                state.currentEvent = action.payload.event;
-                state.myEvents.unshift(action.payload.event);
+                const event = action.payload.data || action.payload.event;
+                const normalizedEvent = normalizeEventData(event);
+                state.currentEvent = normalizedEvent;
+                state.myEvents.unshift(normalizedEvent);
                 state.successMessage = 'Event duplicated successfully';
             })
             .addCase(duplicateEvent.rejected, (state, action) => {

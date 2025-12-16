@@ -3,40 +3,102 @@
 /**
  * Order Confirmation Page
  * Displays order success and ticket information
+ * Uses guest order endpoint for post-checkout confirmation
  */
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useOrders } from "@/hooks/useOrders";
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { FrontLayout } from "@/components/layout/FrontLayout";
-import { CheckCircle, Download, Calendar, Mail, Ticket, ArrowRight } from "lucide-react";
+import { CheckCircle, Download, Calendar, Mail, Ticket, ArrowRight, MapPin, Clock } from "lucide-react";
+import ticketingService from "@/services/ticketing.service";
+
+/**
+ * Get currency symbol from currency code
+ */
+function getCurrencySymbol(currency) {
+    const symbols = {
+        GBP: '£',
+        USD: '$',
+        EUR: '€',
+    };
+    return symbols[currency] || currency || '£';
+}
+
+/**
+ * Format date for display
+ */
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+}
+
+/**
+ * Format time for display
+ */
+function formatTime(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
 
 export default function OrderConfirmationPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const router = useRouter();
-    const orderId = params.orderId; // MongoDB ObjectId is a string
+    const orderId = params.orderId;
+    const email = searchParams.get('email');
 
-    const {
-        currentOrder,
-        currentOrderTickets,
-        fetchOrderDetails,
-        fetchOrderTickets,
-        currentOrderLoading,
-        ticketsLoading,
-    } = useOrders();
+    const [orderData, setOrderData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (orderId) {
-            fetchOrderDetails(orderId);
-            fetchOrderTickets(orderId);
-        }
-    }, [orderId]);
+        const fetchOrder = async () => {
+            if (!orderId || !email) {
+                setError('Missing order ID or email');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await ticketingService.getGuestOrder(orderId, email);
+                if (response.success && response.data) {
+                    setOrderData(response.data);
+                } else {
+                    setError(response.message || 'Failed to load order');
+                }
+            } catch (err) {
+                console.error('Error fetching order:', err);
+                setError(err.response?.data?.message || 'Failed to load order details');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrder();
+    }, [orderId, email]);
 
     const handleViewTickets = () => {
-        router.push(`/my-tickets/${orderId}`);
+        router.push(`/my-tickets/${orderId}?email=${encodeURIComponent(email)}`);
     };
 
-    if (currentOrderLoading || ticketsLoading) {
+    const handleDownloadTickets = () => {
+        if (orderData?.download_url) {
+            window.open(orderData.download_url, '_blank');
+        }
+    };
+
+    if (loading) {
         return (
             <FrontLayout>
                 <div className="container mx-auto px-4 py-12">
@@ -51,17 +113,20 @@ export default function OrderConfirmationPage() {
         );
     }
 
-    if (!currentOrder) {
+    if (error || !orderData) {
         return (
             <FrontLayout>
                 <div className="container mx-auto px-4 py-12">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <p className="text-red-600 font-medium">Order not found</p>
+                        <p className="text-red-600 font-medium">{error || 'Order not found'}</p>
                     </div>
                 </div>
             </FrontLayout>
         );
     }
+
+    const { order, items, event, tickets, download_url } = orderData;
+    const currency = getCurrencySymbol(order.currency);
 
     return (
         <FrontLayout>
@@ -78,6 +143,54 @@ export default function OrderConfirmationPage() {
                         </p>
                     </div>
 
+                    {/* Event Info Card */}
+                    {event && (
+                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+                            {event.cover_image && event.path && (
+                                <div className="h-48 overflow-hidden relative">
+                                    <Image
+                                        src={`${process.env.NEXT_PUBLIC_URL_KEY}${event.path}/${event.cover_image}`}
+                                        alt={event.title}
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                    />
+                                </div>
+                            )}
+                            <div className="p-6">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">{event.title}</h2>
+                                <div className="space-y-3 text-gray-600">
+                                    <div className="flex items-start gap-3">
+                                        <Calendar className="w-5 h-5 text-primary mt-0.5" />
+                                        <div>
+                                            <p className="font-medium">{formatDate(event.start_date)}</p>
+                                            <p className="text-sm">
+                                                {formatTime(event.start_date)} - {formatTime(event.end_date)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {event.doors_open && (
+                                        <div className="flex items-center gap-3">
+                                            <Clock className="w-5 h-5 text-primary" />
+                                            <p>Doors open at {formatTime(event.doors_open)}</p>
+                                        </div>
+                                    )}
+                                    <div className="flex items-start gap-3">
+                                        <MapPin className="w-5 h-5 text-primary mt-0.5" />
+                                        <div>
+                                            <p className="font-medium">{event.venue_name}</p>
+                                            <p className="text-sm">
+                                                {[event.address, event.city, event.postcode, event.country]
+                                                    .filter(Boolean)
+                                                    .join(', ')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Order Details Card */}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
                         {/* Header */}
@@ -85,12 +198,12 @@ export default function OrderConfirmationPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-primary-100 text-sm mb-1">Order Number</p>
-                                    <p className="text-2xl font-bold">{currentOrder.orderNumber}</p>
+                                    <p className="text-2xl font-bold">{order.order_number}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-primary-100 text-sm mb-1">Total Paid</p>
                                     <p className="text-2xl font-bold">
-                                        ${(currentOrder.total / 100).toFixed(2)}
+                                        {currency}{(order.total / 100).toFixed(2)}
                                     </p>
                                 </div>
                             </div>
@@ -99,49 +212,71 @@ export default function OrderConfirmationPage() {
                         {/* Order Items */}
                         <div className="p-6">
                             <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
-                            <div className="space-y-3 mb-6">
-                                {currentOrder.items?.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
-                                    >
-                                        <div>
-                                            <p className="font-semibold text-gray-900">
-                                                {item.ticketTypeName}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                Quantity: {item.quantity}
-                                            </p>
+                            {items && items.length > 0 ? (
+                                <div className="space-y-3 mb-6">
+                                    {items.map((item, index) => (
+                                        <div
+                                            key={item.id || index}
+                                            className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
+                                        >
+                                            <div>
+                                                <p className="font-semibold text-gray-900">
+                                                    {item.ticket_type_name}
+                                                </p>
+                                                <p className="text-sm text-gray-600">
+                                                    Qty: {item.quantity} × {currency}{(item.unit_price / 100).toFixed(2)}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-gray-900">
+                                                    {currency}{(item.subtotal / 100).toFixed(2)}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-gray-900">
-                                                ${(item.subtotal / 100).toFixed(2)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 text-gray-500 mb-6">
+                                    <p>{tickets?.length || 0} ticket(s) purchased</p>
+                                </div>
+                            )}
 
                             {/* Totals */}
                             <div className="border-t border-gray-200 pt-4 space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Subtotal</span>
                                     <span className="font-semibold">
-                                        ${(currentOrder.subtotal / 100).toFixed(2)}
+                                        {currency}{(order.subtotal / 100).toFixed(2)}
                                     </span>
                                 </div>
-                                {currentOrder.discount > 0 && (
+                                {order.discount > 0 && (
                                     <div className="flex justify-between text-sm text-green-600">
-                                        <span>Discount ({currentOrder.promoCode})</span>
+                                        <span>Discount {order.promo_code && `(${order.promo_code})`}</span>
                                         <span className="font-semibold">
-                                            -${(currentOrder.discount / 100).toFixed(2)}
+                                            -{currency}{(order.discount / 100).toFixed(2)}
                                         </span>
                                     </div>
                                 )}
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Fees</span>
-                                    <span className="font-semibold">
-                                        ${(currentOrder.fees / 100).toFixed(2)}
+                                {order.fees > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600">Fees</span>
+                                        <span className="font-semibold">
+                                            {currency}{(order.fees / 100).toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
+                                {order.tax > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600">Tax</span>
+                                        <span className="font-semibold">
+                                            {currency}{(order.tax / 100).toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="border-t border-gray-200 pt-2 flex justify-between">
+                                    <span className="font-bold text-gray-900">Total</span>
+                                    <span className="font-bold text-xl text-primary">
+                                        {currency}{(order.total / 100).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
@@ -152,11 +287,9 @@ export default function OrderConfirmationPage() {
                                     Contact Information
                                 </h3>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <p>{currentOrder.customerName || ""}</p>
-                                    <p>{currentOrder.customerEmail}</p>
-                                    {currentOrder.customerPhone && (
-                                        <p>{currentOrder.customerPhone}</p>
-                                    )}
+                                    <p>{order.customer_name}</p>
+                                    <p>{order.customer_email}</p>
+                                    {order.customer_phone && <p>{order.customer_phone}</p>}
                                 </div>
                             </div>
                         </div>
@@ -171,17 +304,65 @@ export default function OrderConfirmationPage() {
                             <div className="flex-1">
                                 <h3 className="font-bold text-blue-900 mb-2">Your Tickets</h3>
                                 <p className="text-blue-800 text-sm mb-4">
-                                    {currentOrderTickets.length}{" "}
-                                    {currentOrderTickets.length === 1 ? "ticket" : "tickets"} ready
-                                    to use
+                                    {tickets?.length || 0}{" "}
+                                    {(tickets?.length || 0) === 1 ? "ticket" : "tickets"} ready to use
                                 </p>
-                                <button
-                                    onClick={handleViewTickets}
-                                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
-                                >
-                                    View Tickets
-                                    <ArrowRight className="w-4 h-4" />
-                                </button>
+
+                                {/* Ticket List */}
+                                {tickets && tickets.length > 0 && (
+                                    <div className="space-y-2 mb-4">
+                                        {tickets.map((ticket) => (
+                                            <div
+                                                key={ticket.id}
+                                                className="bg-white rounded-lg p-3 border border-blue-100"
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-medium text-gray-900">
+                                                            {ticket.ticket_type?.name}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 font-mono">
+                                                            {ticket.code}
+                                                        </p>
+                                                    </div>
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                        ticket.status === 'valid'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : ticket.status === 'used'
+                                                            ? 'bg-gray-100 text-gray-700'
+                                                            : 'bg-red-100 text-red-700'
+                                                    }`}>
+                                                        {ticket.status}
+                                                    </span>
+                                                </div>
+                                                {ticket.attendee_name && (
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        {ticket.attendee_name}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        onClick={handleViewTickets}
+                                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    >
+                                        View Tickets
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                    {download_url && (
+                                        <button
+                                            onClick={handleDownloadTickets}
+                                            className="bg-white text-blue-600 border border-blue-300 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Download PDF
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -198,7 +379,7 @@ export default function OrderConfirmationPage() {
                                     <p className="font-semibold text-gray-900">Check Your Email</p>
                                     <p className="text-sm text-gray-600">
                                         We&apos;ve sent your tickets and order confirmation to{" "}
-                                        {currentOrder.customerEmail}
+                                        {order.customer_email}
                                     </p>
                                 </div>
                             </div>
@@ -223,7 +404,7 @@ export default function OrderConfirmationPage() {
                                 <div>
                                     <p className="font-semibold text-gray-900">Save the Date</p>
                                     <p className="text-sm text-gray-600">
-                                        Add the event to your calendar so you don&apos;t miss it
+                                        {event?.title} on {formatDate(event?.start_date)}
                                     </p>
                                 </div>
                             </div>

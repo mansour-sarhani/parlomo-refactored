@@ -27,9 +27,9 @@ export const fetchEventTicketing = createAsyncThunk(
  */
 export const validatePromoCode = createAsyncThunk(
     'ticketing/validatePromoCode',
-    async ({ code, cartTotal, ticketTypeIds }, { rejectWithValue }) => {
+    async ({ eventId, code, cartItems }, { rejectWithValue }) => {
         try {
-            return await ticketingService.validatePromoCode({ code, cartTotal, ticketTypeIds });
+            return await ticketingService.validatePromoCode({ eventId, code, cartItems });
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: 'Failed to validate promo code' });
         }
@@ -71,6 +71,8 @@ const initialState = {
     currentEvent: null,
     ticketTypes: [],
     eventStats: null,
+    serviceCharges: [],
+    taxRate: 0,
 
     // Shopping cart
     cart: [],
@@ -225,6 +227,18 @@ const ticketingSlice = createSlice({
          * Reset ticketing state
          */
         resetTicketing: () => initialState,
+
+        /**
+         * Set ticket types directly (used when ticket types come from event response)
+         */
+        setTicketTypes: (state, action) => {
+            const { eventId, ticketTypes, stats, serviceCharges, taxRate } = action.payload;
+            state.currentEvent = eventId;
+            state.ticketTypes = ticketTypes || [];
+            state.eventStats = stats || null;
+            state.serviceCharges = serviceCharges || [];
+            state.taxRate = taxRate || 0;
+        },
     },
     extraReducers: (builder) => {
         // Fetch Event Ticketing
@@ -252,19 +266,21 @@ const ticketingSlice = createSlice({
             })
             .addCase(validatePromoCode.fulfilled, (state, action) => {
                 state.loading = false;
+                const data = action.payload.data || action.payload;
 
-                if (action.payload.valid) {
-                    state.promoDiscount = action.payload.promo.discount;
+                if (data.valid) {
+                    // Use calculated_discount from response (in cents)
+                    state.promoDiscount = data.calculated_discount || data.discount_amount || 0;
                     state.promoError = null;
                 } else {
                     state.promoDiscount = 0;
-                    state.promoError = action.payload.error;
+                    state.promoError = data.message || data.error || 'Invalid promo code';
                     state.promoCode = null;
                 }
             })
             .addCase(validatePromoCode.rejected, (state, action) => {
                 state.loading = false;
-                state.promoError = action.payload?.error || 'Failed to validate promo code';
+                state.promoError = action.payload?.message || action.payload?.error || 'Failed to validate promo code';
                 state.promoDiscount = 0;
                 state.promoCode = null;
             });
@@ -277,12 +293,40 @@ const ticketingSlice = createSlice({
             })
             .addCase(startCheckout.fulfilled, (state, action) => {
                 state.loading = false;
-                state.checkoutSession = action.payload.session;
+                // Extract session data from response (handles both {data: ...} and {session: ...} formats)
+                const sessionData = action.payload.data || action.payload.session || action.payload;
+                state.checkoutSession = {
+                    sessionId: sessionData.session_id,
+                    eventId: sessionData.event_id,
+                    cartItems: sessionData.cart_items?.map(item => ({
+                        ticketTypeId: item.ticket_type_id,
+                        ticketTypeName: item.ticket_type_name,
+                        quantity: item.quantity,
+                        unitPrice: item.unit_price,
+                        subtotal: item.subtotal,
+                    })) || [],
+                    subtotal: sessionData.subtotal,
+                    discount: sessionData.discount || sessionData.discount_amount || sessionData.calculated_discount || 0,
+                    promoCode: sessionData.promo_code || sessionData.promoCode,
+                    promoCodeId: sessionData.promo_code_id || sessionData.promoCodeId,
+                    taxFee: sessionData.fees || 0, // "fees" is the tax fee
+                    feeBreakdown: sessionData.fee_breakdown?.map(fee => ({
+                        name: fee.name,
+                        amount: fee.amount,
+                        type: fee.type,
+                    })) || [], // Service charges
+                    total: sessionData.total,
+                    currency: sessionData.currency,
+                    status: sessionData.status,
+                    expiresAt: sessionData.expires_at,
+                    timeRemainingSeconds: sessionData.time_remaining_seconds,
+                    isActive: sessionData.is_active,
+                };
                 state.checkoutStep = 'details';
             })
             .addCase(startCheckout.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload?.error || 'Failed to start checkout';
+                state.error = action.payload?.message || action.payload?.error || 'Failed to start checkout';
             });
 
         // Complete Checkout
@@ -314,6 +358,7 @@ export const {
     clearPromoCode,
     setCheckoutStep,
     resetTicketing,
+    setTicketTypes,
 } = ticketingSlice.actions;
 
 // Selectors
@@ -330,6 +375,8 @@ export const selectTicketingLoading = (state) => state.ticketing.loading;
 export const selectTicketingError = (state) => state.ticketing.error;
 export const selectEventStats = (state) => state.ticketing.eventStats;
 export const selectCurrentEventId = (state) => state.ticketing.currentEvent;
+export const selectServiceCharges = (state) => state.ticketing.serviceCharges;
+export const selectTaxRate = (state) => state.ticketing.taxRate;
 
 // Calculate final total with promo and fees
 export const selectFinalTotal = (state) => {

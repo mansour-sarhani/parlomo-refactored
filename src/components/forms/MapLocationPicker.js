@@ -52,8 +52,10 @@ function LocationMarker({ position, onChange }) {
 export function MapLocationPicker({ latitude, longitude, onChange }) {
     const [mounted, setMounted] = useState(false);
 
-    // Derive position directly from props
-    const position = latitude && longitude ? { lat: latitude, lng: longitude } : null;
+    // Derive position directly from props, ensuring values are numbers
+    const lat = latitude != null ? parseFloat(latitude) : null;
+    const lng = longitude != null ? parseFloat(longitude) : null;
+    const position = lat != null && lng != null && !isNaN(lat) && !isNaN(lng) ? { lat, lng } : null;
 
     const defaultCenter = [51.5074, -0.1278]; // London
 

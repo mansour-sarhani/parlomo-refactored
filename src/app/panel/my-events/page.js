@@ -84,7 +84,6 @@ export default function MyEventsPage() {
         // Fetch events
         dispatch(
             fetchMyEvents({
-                organizerId: user.id,
                 page,
                 limit: 10,
                 status,
@@ -103,7 +102,6 @@ export default function MyEventsPage() {
         try {
             await dispatch(
                 fetchMyEvents({
-                    organizerId: user.id,
                     page: pagination.page,
                     limit: memoisedLimit,
                     ...filters,
@@ -165,17 +163,6 @@ export default function MyEventsPage() {
                 return;
             }
             router.push(`/panel/my-events/${event.id}`);
-        },
-        [router]
-    );
-
-    const handleEditEvent = useCallback(
-        (event) => {
-            if (!event?.id) {
-                toast.error("Unable to open event for editing");
-                return;
-            }
-            router.push(`/panel/my-events/${event.id}/edit`);
         },
         [router]
     );
@@ -332,7 +319,6 @@ export default function MyEventsPage() {
                         <EventsTable
                             events={myEvents}
                             onView={handleViewEvent}
-                            onEdit={handleEditEvent}
                             onManageTicketing={handleManageTicketing}
                         />
                         {pagination.totalPages > 1 && (

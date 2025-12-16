@@ -31,8 +31,9 @@ export default function PromoCodeManager({ eventId }) {
 
     const loadPromoCodes = async () => {
         try {
-            const data = await ticketingService.getEventPromoCodes(eventId);
-            setPromoCodes(data);
+            const response = await ticketingService.getEventPromoCodes(eventId);
+            // API returns { success: true, data: [...] }
+            setPromoCodes(response.data || []);
         } catch (error) {
             console.error('Failed to load promo codes:', error);
             toast.error('Failed to load promo codes');
@@ -42,14 +43,15 @@ export default function PromoCodeManager({ eventId }) {
     };
 
     const handleEdit = (promo) => {
+        // API returns snake_case, map to camelCase for form
         setFormData({
             code: promo.code,
-            discountType: promo.discountType,
-            discountAmount: promo.discountAmount,
-            maxUses: promo.maxUses || '',
-            minOrderAmount: promo.minOrderAmount || '',
-            startDate: promo.startDate ? promo.startDate.slice(0, 16) : '',
-            endDate: promo.endDate ? promo.endDate.slice(0, 16) : '',
+            discountType: promo.discount_type,
+            discountAmount: promo.discount_amount,
+            maxUses: promo.max_uses || '',
+            minOrderAmount: promo.min_purchase_amount || '',
+            startDate: promo.valid_from ? promo.valid_from.slice(0, 16) : '',
+            endDate: promo.valid_until ? promo.valid_until.slice(0, 16) : '',
             active: promo.active,
         });
         setEditingId(promo.id);
@@ -86,13 +88,16 @@ export default function PromoCodeManager({ eventId }) {
 
         setSaving(true);
         try {
+            // API expects snake_case field names
             const payload = {
-                ...formData,
-                discountAmount: parseFloat(formData.discountAmount),
-                maxUses: formData.maxUses ? parseInt(formData.maxUses, 10) : null,
-                minOrderAmount: formData.minOrderAmount ? parseFloat(formData.minOrderAmount) : 0,
-                startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
-                endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+                code: formData.code,
+                discount_type: formData.discountType,
+                discount_amount: parseFloat(formData.discountAmount),
+                max_uses: formData.maxUses ? parseInt(formData.maxUses, 10) : null,
+                min_order_amount: formData.minOrderAmount ? parseFloat(formData.minOrderAmount) : 0,
+                start_date: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+                end_date: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+                active: formData.active,
             };
 
             if (editingId) {
@@ -309,12 +314,12 @@ export default function PromoCodeManager({ eventId }) {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {promo.discountType === 'percentage'
-                                                ? `${promo.discountAmount}%`
-                                                : `£${promo.discountAmount.toFixed(2)}`}
+                                            {promo.discount_type === 'percentage'
+                                                ? `${promo.discount_amount}%`
+                                                : `£${(promo.discount_amount || 0).toFixed(2)}`}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {promo.currentUses} / {promo.maxUses || '∞'}
+                                            {promo.current_uses} / {promo.max_uses || '∞'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <button

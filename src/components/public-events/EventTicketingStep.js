@@ -238,14 +238,14 @@ export function EventTicketingStep({ formData, errors, onChange }) {
             {/* Waitlist Option */}
             <div className="flex items-start gap-3">
                 <input
-                    id="enableWaitlist"
+                    id="waitlistEnabled"
                     type="checkbox"
-                    checked={formData.enableWaitlist || false}
-                    onChange={(e) => onChange("enableWaitlist", e.target.checked)}
+                    checked={formData.waitlistEnabled || false}
+                    onChange={(e) => onChange("waitlistEnabled", e.target.checked)}
                     className="mt-1"
                 />
                 <div>
-                    <label htmlFor="enableWaitlist" className="text-sm font-medium cursor-pointer" style={{ color: "var(--color-text-primary)" }}>
+                    <label htmlFor="waitlistEnabled" className="text-sm font-medium cursor-pointer" style={{ color: "var(--color-text-primary)" }}>
                         Enable Waitlist
                     </label>
                     <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>

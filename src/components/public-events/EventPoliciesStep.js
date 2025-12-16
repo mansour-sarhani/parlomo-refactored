@@ -75,26 +75,13 @@ export function EventPoliciesStep({ formData, errors, onChange }) {
             <div className="space-y-3 pt-4 border-t" style={{ borderColor: "var(--color-border)" }}>
                 <div className="flex items-center gap-3">
                     <input
-                        id="showRemainingTickets"
+                        id="waitlistEnabled"
                         type="checkbox"
-                        checked={formData.showRemainingTickets || false}
-                        onChange={(e) => onChange("showRemainingTickets", e.target.checked)}
+                        checked={formData.waitlistEnabled || false}
+                        onChange={(e) => onChange("waitlistEnabled", e.target.checked)}
                         className="w-4 h-4"
                     />
-                    <label htmlFor="showRemainingTickets" className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                        Show remaining tickets count on event page
-                    </label>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <input
-                        id="allowWaitlist"
-                        type="checkbox"
-                        checked={formData.allowWaitlist || false}
-                        onChange={(e) => onChange("allowWaitlist", e.target.checked)}
-                        className="w-4 h-4"
-                    />
-                    <label htmlFor="allowWaitlist" className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                    <label htmlFor="waitlistEnabled" className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
                         Allow waitlist when sold out
                     </label>
                 </div>

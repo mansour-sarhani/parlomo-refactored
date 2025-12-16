@@ -36,7 +36,7 @@
  * @property {EventType} eventType - Type of ticketing ("general_admission" | "seated" | "hybrid")
  * @property {number|null} globalCapacity - Maximum total attendees (null = unlimited)
  * @property {string} currency - ISO 4217 currency code ("USD", "EUR", "GBP", etc.)
- * @property {boolean} enableWaitlist - Allow waitlist when sold out
+ * @property {boolean} waitlistEnabled - Allow waitlist when sold out
  * 
  * // Organizer Information
  * @property {string} organizerName - Public display name for organizer
@@ -142,7 +142,7 @@
  * @property {EventType} eventType
  * @property {number|null} globalCapacity
  * @property {string} currency
- * @property {boolean} enableWaitlist
+ * @property {boolean} waitlistEnabled
  * @property {string|null} coverImage
  * @property {string[]} galleryImages
  * @property {string|null} videoUrl
@@ -194,7 +194,7 @@ export const DEFAULT_EVENT_VALUES = {
     eventType: 'general_admission',
     currency: 'GBP',
     timezone: 'Europe/London',
-    enableWaitlist: false,
+    waitlistEnabled: false,
     isPublic: true,
     isOnline: false,
     ageRestriction: 'all_ages',

@@ -7,6 +7,8 @@ import { EventCard } from "@/components/public-events/EventCard";
 import { EventArchiveFilters } from "@/components/public-events/EventArchiveFilters";
 import { Button } from "@/components/common/Button";
 import { Calendar, ChevronLeft, ChevronRight, Frown } from "lucide-react";
+import publicEventsService from "@/services/public-events.service";
+import { normalizeEventData } from "@/features/public-events/publicEventsSlice";
 
 export default function EventsArchivePage() {
     const router = useRouter();
@@ -31,81 +33,72 @@ export default function EventsArchivePage() {
         sortBy: searchParams.get("sortBy") || "startDate",
     });
 
-    // Build query params for API
-    const buildQueryParams = useCallback((currentFilters, page = 1) => {
-        const params = new URLSearchParams();
-
-        params.set("page", page.toString());
-        params.set("limit", pagination.limit.toString());
-        // Only show published events on the public archive
-        params.set("status", "published");
-
-        if (currentFilters.search) {
-            params.set("search", currentFilters.search);
-        }
-
-        if (currentFilters.category) {
-            params.set("category", currentFilters.category);
-        }
-
-        // Handle date range
-        const now = new Date();
-        switch (currentFilters.dateRange) {
-            case "upcoming":
-                params.set("startDateFrom", now.toISOString());
-                break;
-            case "this-week":
-                params.set("startDateFrom", now.toISOString());
-                const endOfWeek = new Date(now);
-                endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
-                params.set("startDateTo", endOfWeek.toISOString());
-                break;
-            case "this-month":
-                params.set("startDateFrom", now.toISOString());
-                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                params.set("startDateTo", endOfMonth.toISOString());
-                break;
-            case "all":
-                // No date filter
-                break;
-        }
-
-        // Sort
-        params.set("sortBy", currentFilters.sortBy || "startDate");
-        params.set("sortOrder", currentFilters.sortBy === "startDate" ? "asc" : "desc");
-
-        return params;
-    }, [pagination.limit]);
-
-    // Fetch events
+    // Fetch events using the public events service (calls external API)
     const fetchEvents = useCallback(async (currentFilters, page = 1) => {
         try {
             setLoading(true);
             setError(null);
 
-            const params = buildQueryParams(currentFilters, page);
-            const response = await fetch(`/api/public-events?${params.toString()}`);
+            // Build params object for the service
+            const params = {
+                page,
+                limit: pagination.limit,
+                status: "published",
+            };
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch events");
+            if (currentFilters.search) {
+                params.search = currentFilters.search;
             }
 
-            const data = await response.json();
+            if (currentFilters.category) {
+                params.category = currentFilters.category;
+            }
 
-            setEvents(data.events || []);
+            // Handle date range
+            const now = new Date();
+            switch (currentFilters.dateRange) {
+                case "upcoming":
+                    params.startDateFrom = now.toISOString();
+                    break;
+                case "this-week":
+                    params.startDateFrom = now.toISOString();
+                    const endOfWeek = new Date(now);
+                    endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
+                    params.startDateTo = endOfWeek.toISOString();
+                    break;
+                case "this-month":
+                    params.startDateFrom = now.toISOString();
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    params.startDateTo = endOfMonth.toISOString();
+                    break;
+                case "all":
+                    // No date filter
+                    break;
+            }
+
+            // Sort
+            params.sortBy = currentFilters.sortBy || "startDate";
+            params.sortOrder = currentFilters.sortBy === "startDate" ? "asc" : "desc";
+
+            const data = await publicEventsService.getEvents(params);
+
+            // Normalize events from API response (snake_case to camelCase)
+            const normalizedEvents = (data.data || data.events || []).map(normalizeEventData);
+
+            setEvents(normalizedEvents);
             setPagination(prev => ({
                 ...prev,
-                page: data.pagination?.page || page,
-                total: data.pagination?.total || 0,
-                totalPages: data.pagination?.totalPages || 0,
+                page: data.meta?.current_page || data.pagination?.page || page,
+                total: data.meta?.total || data.pagination?.total || 0,
+                totalPages: data.meta?.last_page || data.pagination?.totalPages || 0,
             }));
         } catch (err) {
             console.error("Error fetching events:", err);
-            setError(err.message);
+            setError(err.message || "Failed to fetch events");
         } finally {
             setLoading(false);
         }
-    }, [buildQueryParams]);
+    }, [pagination.limit]);
 
     // Initial fetch and URL sync
     useEffect(() => {

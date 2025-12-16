@@ -6,13 +6,14 @@
 import { ticketingApi } from '@/lib/ticketing-axios';
 
 const BASE_URL = '/api/public-events/categories';
+const ADMIN_URL = '/api/public-events/categories/admin';
 
 /**
  * Public Event Categories Service
  */
 export const publicEventCategoriesService = {
     /**
-     * Get all categories with pagination
+     * Get all categories with pagination (admin endpoint - includes inactive)
      * @param {Object} params - Query parameters
      * @param {string} params.status - Filter by status ('active', 'inactive', 'all')
      * @param {string} params.search - Search term
@@ -28,7 +29,8 @@ export const publicEventCategoriesService = {
         if (params.status) query.status = params.status;
         if (params.search) query.search = params.search;
 
-        return ticketingApi.get(BASE_URL, { params: query });
+        // Use admin endpoint to include all categories (active and inactive)
+        return ticketingApi.get(ADMIN_URL, { params: query });
     },
 
     /**
@@ -36,6 +38,7 @@ export const publicEventCategoriesService = {
      * @returns {Promise<Object>} Active categories
      */
     async getActiveCategories() {
+        // Use public endpoint for active categories only
         return ticketingApi.get(BASE_URL, { params: { activeOnly: 'true' } });
     },
 
@@ -97,6 +100,9 @@ export const publicEventCategoriesService = {
     async updateCategory(id, payload = {}) {
         const formData = new FormData();
 
+        // Laravel requires _method for FormData PATCH requests
+        formData.append('_method', 'PATCH');
+
         // Append text fields (only if provided)
         if (payload.name !== undefined) formData.append('name', payload.name);
         if (payload.icon !== undefined) formData.append('icon', payload.icon);
@@ -111,7 +117,8 @@ export const publicEventCategoriesService = {
             formData.append('image', payload.image);
         }
 
-        return ticketingApi.patch(`${BASE_URL}/${id}`, formData, {
+        // Use POST with _method: PATCH for Laravel FormData compatibility
+        return ticketingApi.post(`${BASE_URL}/${id}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

@@ -35,8 +35,9 @@ export default function TicketTypeManager({ eventId }) {
     const fetchTicketTypes = async () => {
         try {
             setLoading(true);
-            const data = await ticketingService.getEventTicketing(eventId);
-            setTicketTypes(data.ticketTypes || []);
+            const response = await ticketingService.getEventTicketing(eventId);
+            // API returns { success: true, data: { ticket_types: [...] } }
+            setTicketTypes(response.data?.ticket_types || []);
         } catch (error) {
             console.error('Error fetching ticket types:', error);
         } finally {
@@ -82,16 +83,17 @@ export default function TicketTypeManager({ eventId }) {
     };
 
     const handleEdit = (ticketType) => {
+        // API returns snake_case, map to camelCase for form
         setFormData({
             name: ticketType.name,
-            description: ticketType.description,
+            description: ticketType.description || '',
             price: (ticketType.price / 100).toString(),
-            capacity: ticketType.capacity.toString(),
-            minPerOrder: ticketType.minPerOrder,
-            maxPerOrder: ticketType.maxPerOrder,
-            visible: ticketType.visible,
-            refundable: ticketType.refundable,
-            transferAllowed: ticketType.transferAllowed,
+            capacity: (ticketType.available || 0).toString(),
+            minPerOrder: ticketType.min_per_order || 1,
+            maxPerOrder: ticketType.max_per_order || 10,
+            visible: ticketType.is_on_sale ?? true,
+            refundable: ticketType.refundable ?? true,
+            transferAllowed: ticketType.transfer_allowed ?? true,
         });
         setEditingId(ticketType.id);
         setShowCreateForm(true);
@@ -100,7 +102,7 @@ export default function TicketTypeManager({ eventId }) {
     const handleToggleVisibility = async (ticketType) => {
         try {
             await ticketingService.updateTicketType(eventId, ticketType.id, {
-                visible: !ticketType.visible,
+                is_on_sale: !ticketType.is_on_sale,
             });
             fetchTicketTypes();
         } catch (error) {
@@ -300,9 +302,14 @@ export default function TicketTypeManager({ eventId }) {
                                         <h3 className="text-lg font-bold text-gray-900">
                                             {ticketType.name}
                                         </h3>
-                                        {!ticketType.visible && (
+                                        {!ticketType.is_on_sale && (
                                             <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium">
                                                 Hidden
+                                            </span>
+                                        )}
+                                        {ticketType.is_sold_out && (
+                                            <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">
+                                                Sold Out
                                             </span>
                                         )}
                                     </div>
@@ -319,15 +326,15 @@ export default function TicketTypeManager({ eventId }) {
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="text-gray-600">Sold:</span>
-                                            <span className="font-semibold text-gray-900 ml-1">
-                                                {ticketType.sold} / {ticketType.capacity}
-                                            </span>
-                                        </div>
-                                        <div>
                                             <span className="text-gray-600">Available:</span>
                                             <span className="font-semibold text-green-600 ml-1">
                                                 {ticketType.available}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">Per Order:</span>
+                                            <span className="font-semibold text-gray-900 ml-1">
+                                                {ticketType.min_per_order} - {ticketType.max_per_order}
                                             </span>
                                         </div>
                                     </div>
@@ -347,9 +354,9 @@ export default function TicketTypeManager({ eventId }) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-gray-600 hover:bg-gray-100"
-                                        title={ticketType.visible ? 'Hide' : 'Show'}
+                                        title={ticketType.is_on_sale ? 'Hide' : 'Show'}
                                     >
-                                        {ticketType.visible ? (
+                                        {ticketType.is_on_sale ? (
                                             <Eye className="w-5 h-5" />
                                         ) : (
                                             <EyeOff className="w-5 h-5" />

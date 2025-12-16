@@ -2,16 +2,16 @@
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, ImageIcon } from 'lucide-react';
 
 /**
  * ImageUploader Component
- * 
+ *
  * A standalone image uploader with drag-and-drop support.
- * Automatically uploads files to /api/upload and stores the returned URL.
- * 
+ * Stores File objects directly for form submission as multipart/form-data.
+ *
  * @param {object} props
- * @param {File|File[]|string|string[]|null} props.value - Current file(s) or URL(s)
+ * @param {File|File[]|null} props.value - Current file(s)
  * @param {function} props.onChange - Callback when files change
  * @param {boolean} props.multiple - Allow multiple files (default: false)
  * @param {number} props.maxFiles - Maximum number of files (default: 1)
@@ -24,58 +24,30 @@ export function ImageUploader({
     maxFiles = 1,
     helpText
 }) {
-    const [uploading, setUploading] = useState(false);
-    const [uploadError, setUploadError] = useState(null);
+    const [dragError, setDragError] = useState(null);
 
     // Normalize value to array for consistent handling
     const files = multiple
         ? (Array.isArray(value) ? value : (value ? [value] : []))
         : (value ? [value] : []);
 
-    /**
-     * Upload a file to the server
-     */
-    const uploadFile = async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Upload failed');
+    const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+        if (rejectedFiles.length > 0) {
+            const error = rejectedFiles[0].errors[0];
+            setDragError(error.message || 'File not accepted');
+            return;
         }
 
-        const data = await response.json();
-        return data.url;
-    };
-
-    const onDrop = useCallback(async (acceptedFiles) => {
         if (acceptedFiles.length === 0) return;
 
-        setUploading(true);
-        setUploadError(null);
+        setDragError(null);
 
-        try {
-            // Upload all files
-            const uploadPromises = acceptedFiles.map(file => uploadFile(file));
-            const uploadedUrls = await Promise.all(uploadPromises);
-
-            // Update the form with URLs
-            if (multiple) {
-                const newFiles = [...files, ...uploadedUrls].slice(0, maxFiles);
-                onChange(newFiles);
-            } else {
-                onChange(uploadedUrls[0]);
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            setUploadError(error.message);
-        } finally {
-            setUploading(false);
+        // Store File objects directly
+        if (multiple) {
+            const newFiles = [...files, ...acceptedFiles].slice(0, maxFiles);
+            onChange(newFiles);
+        } else {
+            onChange(acceptedFiles[0]);
         }
     }, [files, multiple, maxFiles, onChange]);
 
@@ -84,7 +56,6 @@ export function ImageUploader({
         accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'] },
         maxSize: 5 * 1024 * 1024, // 5MB
         multiple,
-        disabled: uploading,
     });
 
     const removeFile = (indexToRemove) => {
@@ -195,7 +166,7 @@ export function ImageUploader({
                     relative rounded-lg border-2 border-dashed p-6
                     transition-all duration-200 cursor-pointer
                     ${isDragActive ? 'scale-[1.02]' : 'scale-100'}
-                    ${uploading ? 'opacity-60 cursor-not-allowed' : 'hover:border-opacity-70'}
+                    hover:border-opacity-70
                 `}
                 style={{
                     backgroundColor: isDragActive
@@ -209,7 +180,7 @@ export function ImageUploader({
                 <input {...getInputProps()} />
 
                 {/* Upload prompt */}
-                {files.length === 0 && !uploading && (
+                {files.length === 0 && (
                     <div className="text-center">
                         <div
                             className="mx-auto w-12 h-12 mb-3 rounded-full flex items-center justify-center"
@@ -250,29 +221,8 @@ export function ImageUploader({
                     </div>
                 )}
 
-                {/* Uploading state */}
-                {uploading && (
-                    <div className="text-center">
-                        <div
-                            className="mx-auto w-12 h-12 mb-3 rounded-full flex items-center justify-center"
-                            style={{
-                                backgroundColor: 'var(--color-background-elevated)',
-                                color: 'var(--color-primary)',
-                            }}
-                        >
-                            <Loader2 className="w-6 h-6 animate-spin" />
-                        </div>
-                        <p
-                            className="text-sm font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                        >
-                            Uploading...
-                        </p>
-                    </div>
-                )}
-
                 {/* File previews */}
-                {files.length > 0 && !uploading && (
+                {files.length > 0 && (
                     <div className="space-y-2">
                         {files.map((file, index) => renderFilePreview(file, index))}
                     </div>
@@ -280,12 +230,12 @@ export function ImageUploader({
             </div>
 
             {/* Error message */}
-            {uploadError && (
+            {dragError && (
                 <p
                     className="text-sm font-medium"
                     style={{ color: 'var(--color-error)' }}
                 >
-                    Upload failed: {uploadError}
+                    {dragError}
                 </p>
             )}
 
