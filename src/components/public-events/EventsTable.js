@@ -17,6 +17,7 @@ import {
     CreditCard,
     Image,
     Shield,
+    DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { formatEventDateRange, getEventStatusColor } from "@/types/public-events-types";
@@ -32,7 +33,7 @@ const EDIT_SECTIONS = [
     { id: "policies", label: "Policies & Settings", icon: Shield },
 ];
 
-export function EventsTable({ events, onView, onManageTicketing }) {
+export function EventsTable({ events, onView, onManageTicketing, onManageFinancials }) {
     const router = useRouter();
     const [openEditMenuId, setOpenEditMenuId] = useState(null);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
@@ -309,6 +310,15 @@ export function EventsTable({ events, onView, onManageTicketing }) {
                                         icon={<Ticket className="w-4 h-4" />}
                                     >
                                         Ticketing
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onManageFinancials(event)}
+                                        icon={<DollarSign className="w-4 h-4" />}
+                                    >
+                                        Financials
                                     </Button>
                                 </div>
                             </td>

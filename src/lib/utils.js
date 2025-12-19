@@ -55,7 +55,7 @@ export function formatDistanceToNow(date) {
  */
 export function formatDate(date, format = 'short') {
     const d = new Date(date);
-    
+
     const options = {
         short: { year: 'numeric', month: 'short', day: 'numeric' },
         long: { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' },
@@ -63,6 +63,25 @@ export function formatDate(date, format = 'short') {
     };
 
     return d.toLocaleDateString('en-US', options[format] || options.short);
+}
+
+/**
+ * Format date with time (e.g., "17 Dec 2025, 18:30")
+ * @param {string|Date} date - Date to format
+ * @returns {string} Formatted date and time string
+ */
+export function formatDateTime(date) {
+    if (!date) return '-';
+
+    const d = new Date(date);
+
+    return d.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 /**

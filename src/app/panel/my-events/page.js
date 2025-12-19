@@ -178,6 +178,17 @@ export default function MyEventsPage() {
         [router]
     );
 
+    const handleManageFinancials = useCallback(
+        (event) => {
+            if (!event?.id) {
+                toast.error("Unable to open financials");
+                return;
+            }
+            router.push(`/panel/my-events/${event.id}/financials`);
+        },
+        [router]
+    );
+
     const hasActiveFilters = filters.status || filters.category || filters.search;
 
     return (
@@ -320,6 +331,7 @@ export default function MyEventsPage() {
                             events={myEvents}
                             onView={handleViewEvent}
                             onManageTicketing={handleManageTicketing}
+                            onManageFinancials={handleManageFinancials}
                         />
                         {pagination.totalPages > 1 && (
                             <div className="mt-6">

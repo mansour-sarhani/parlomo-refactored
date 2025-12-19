@@ -6,8 +6,7 @@ import { FrontLayout } from "@/components/layout/FrontLayout";
 import { formatEventDateRange, getEventStatusColor } from "@/types/public-events-types";
 import { Button } from "@/components/common/Button";
 import { MapDisplay } from "@/components/common/map/LazyMapDisplay";
-import { Calendar, MapPin, Clock, Globe, Share2, Ticket, Mail, PlayCircle } from "lucide-react";
-import Link from "next/link";
+import { Calendar, MapPin, Clock, Globe, Share2, Ticket, Mail, PlayCircle, DoorOpen, CalendarClock, Users, Check, Navigation, Phone, Facebook, Instagram, MessageCircle } from "lucide-react";
 import { useTicketing } from "@/hooks/useTicketing";
 import TicketTypeCard from "@/components/ticketing/TicketTypeCard";
 import CartSummary from "@/components/ticketing/CartSummary";
@@ -23,6 +22,7 @@ export default function PublicEventPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showMobileCart, setShowMobileCart] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     const {
         ticketTypes,
@@ -127,6 +127,60 @@ export default function PublicEventPage() {
         }
     };
 
+    const handleShareEvent = async () => {
+        const shareUrl = window.location.href;
+        const shareData = {
+            title: event?.title || 'Check out this event',
+            text: `${event?.title} - ${formatEventDateRange(event)}`,
+            url: shareUrl,
+        };
+
+        // Try Web Share API first (works on mobile and some desktop browsers)
+        if (navigator.share && navigator.canShare?.(shareData)) {
+            try {
+                await navigator.share(shareData);
+                return;
+            } catch (err) {
+                // User cancelled or share failed, fall back to copy
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        // Fall back to copying link to clipboard
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+        }
+    };
+
+    const getDirectionsUrl = () => {
+        const lat = event?.location?.coordinates?.lat;
+        const lng = event?.location?.coordinates?.lng;
+
+        // Use coordinates if available
+        if (lat && lng) {
+            return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        }
+
+        // Fall back to address
+        const addressParts = [
+            event?.location?.address,
+            event?.location?.city,
+            event?.location?.state,
+            event?.location?.postcode,
+            event?.location?.country
+        ].filter(Boolean);
+
+        if (addressParts.length > 0) {
+            return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressParts.join(', '))}`;
+        }
+
+        return null;
+    };
+
     if (loading) {
         return (
             <FrontLayout>
@@ -210,7 +264,7 @@ export default function PublicEventPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Main Content */}
                         <div className="lg:col-span-2 space-y-8">
-                            {/* About Section */}
+                            {/* 1. About Section */}
                             <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
                                 <h2 className="text-2xl font-bold mb-6 text-gray-900">
                                     About This Event
@@ -240,30 +294,7 @@ export default function PublicEventPage() {
                                 )}
                             </div>
 
-                            {/* Gallery Section */}
-                            {event.galleryImages && event.galleryImages.length > 0 && (
-                                <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
-                                    <h2 className="text-2xl font-bold mb-6 text-gray-900">
-                                        Gallery
-                                    </h2>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                        {event.galleryImages.map((img, index) => (
-                                            <div
-                                                key={index}
-                                                className="aspect-square rounded-lg overflow-hidden bg-gray-100 group"
-                                            >
-                                                <img
-                                                    src={img}
-                                                    alt={`Gallery image ${index + 1}`}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Video Section */}
+                            {/* 2. Video Section */}
                             {event.videoUrl && (
                                 <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
                                     <h2 className="text-2xl font-bold mb-6 text-gray-900">
@@ -312,7 +343,7 @@ export default function PublicEventPage() {
                                 </div>
                             )}
 
-                            {/* Tickets Section - Moved from Sidebar */}
+                            {/* 3. Tickets Section */}
                             <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
                                 <h2 className="text-2xl font-bold mb-6 text-gray-900">Tickets</h2>
 
@@ -371,7 +402,7 @@ export default function PublicEventPage() {
                                 )}
                             </div>
 
-                            {/* Refund Policy */}
+                            {/* 4. Refund Policy */}
                             {event.refundPolicy && (
                                 <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
                                     <h2 className="text-2xl font-bold mb-6 text-gray-900">
@@ -382,6 +413,29 @@ export default function PublicEventPage() {
                                         style={{ padding: 0 }}
                                         dangerouslySetInnerHTML={{ __html: event.refundPolicy }}
                                     />
+                                </div>
+                            )}
+
+                            {/* 5. Gallery Section */}
+                            {event.galleryImages && event.galleryImages.length > 0 && (
+                                <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+                                    <h2 className="text-2xl font-bold mb-6 text-gray-900">
+                                        Gallery
+                                    </h2>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {event.galleryImages.map((img, index) => (
+                                            <div
+                                                key={index}
+                                                className="aspect-square rounded-lg overflow-hidden bg-gray-100 group"
+                                            >
+                                                <img
+                                                    src={img}
+                                                    alt={`Gallery image ${index + 1}`}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -399,36 +453,110 @@ export default function PublicEventPage() {
 
                                 {/* Event Quick Info */}
                                 <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                                    <h3 className="font-bold text-gray-900 mb-3">Event Details</h3>
                                     <div className="space-y-3 text-sm text-gray-600">
-                                        <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                                        {/* Start Date & Time */}
+                                        <div className="flex items-start justify-between py-2 border-b border-gray-50">
                                             <span className="flex items-center gap-2">
-                                                <Calendar className="w-4 h-4" />
-                                                Date
+                                                <Calendar className="w-4 h-4 text-green-600" />
+                                                Starts
                                             </span>
-                                            <span className="font-medium text-gray-900">
-                                                {new Date(event.startDate).toLocaleDateString()}
-                                            </span>
+                                            <div className="text-right">
+                                                <div className="font-medium text-gray-900">
+                                                    {new Date(event.startDate).toLocaleDateString([], {
+                                                        weekday: 'short',
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric'
+                                                    })}
+                                                </div>
+                                                <div className="text-gray-500">
+                                                    {new Date(event.startDate).toLocaleTimeString([], {
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                                            <span className="flex items-center gap-2">
-                                                <Clock className="w-4 h-4" />
-                                                Time
-                                            </span>
-                                            <span className="font-medium text-gray-900">
-                                                {new Date(event.startDate).toLocaleTimeString([], {
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                })}
-                                            </span>
-                                        </div>
-                                        {event.ageRestriction > 0 && (
+
+                                        {/* End Date & Time */}
+                                        {event.endDate && (
+                                            <div className="flex items-start justify-between py-2 border-b border-gray-50">
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="w-4 h-4 text-red-600" />
+                                                    Ends
+                                                </span>
+                                                <div className="text-right">
+                                                    <div className="font-medium text-gray-900">
+                                                        {new Date(event.endDate).toLocaleDateString([], {
+                                                            weekday: 'short',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    <div className="text-gray-500">
+                                                        {new Date(event.endDate).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Doors Open */}
+                                        {event.doorsOpen && (
+                                            <div className="flex items-start justify-between py-2 border-b border-gray-50">
+                                                <span className="flex items-center gap-2">
+                                                    <DoorOpen className="w-4 h-4 text-blue-600" />
+                                                    Doors Open
+                                                </span>
+                                                <div className="text-right">
+                                                    <div className="font-medium text-gray-900">
+                                                        {new Date(event.doorsOpen).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Booking Deadline */}
+                                        {event.bookingDeadline && (
+                                            <div className="flex items-start justify-between py-2 border-b border-gray-50">
+                                                <span className="flex items-center gap-2">
+                                                    <CalendarClock className="w-4 h-4 text-orange-600" />
+                                                    Book By
+                                                </span>
+                                                <div className="text-right">
+                                                    <div className="font-medium text-gray-900">
+                                                        {new Date(event.bookingDeadline).toLocaleDateString([], {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    <div className="text-gray-500">
+                                                        {new Date(event.bookingDeadline).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Age Restriction */}
+                                        {event.ageRestriction && event.ageRestriction !== 'all_ages' && (
                                             <div className="flex items-center justify-between py-2">
                                                 <span className="flex items-center gap-2">
-                                                    <Ticket className="w-4 h-4" />
-                                                    Age
+                                                    <Users className="w-4 h-4 text-purple-600" />
+                                                    Age Restriction
                                                 </span>
                                                 <span className="font-medium text-gray-900">
-                                                    {event.ageRestriction}+
+                                                    {event.ageRestriction}
                                                 </span>
                                             </div>
                                         )}
@@ -437,9 +565,10 @@ export default function PublicEventPage() {
                                         <Button
                                             variant="outline"
                                             className="w-full"
-                                            icon={<Share2 className="w-4 h-4" />}
+                                            onClick={handleShareEvent}
+                                            icon={linkCopied ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4" />}
                                         >
-                                            Share Event
+                                            {linkCopied ? 'Link Copied!' : 'Share Event'}
                                         </Button>
                                     </div>
                                 </div>
@@ -472,35 +601,62 @@ export default function PublicEventPage() {
                                         zoom={15}
                                         className="w-full h-48 rounded-lg"
                                     />
+                                    {getDirectionsUrl() && (
+                                        <a
+                                            href={getDirectionsUrl()}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                                        >
+                                            <Navigation className="w-4 h-4" />
+                                            Get Directions
+                                        </a>
+                                    )}
                                 </div>
 
                                 {/* Organizer Card */}
                                 <div className="bg-white rounded-xl shadow-sm p-6">
                                     <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold text-xl">
+                                        <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-xl">
                                             {event.organizer?.name?.charAt(0) || "O"}
                                         </div>
                                         <div>
                                             <p className="font-semibold text-gray-900">
                                                 {event.organizer?.name}
                                             </p>
-                                            <Link
-                                                href={`/organizer/${event.organizerId}`}
-                                                className="text-sm text-primary-600 hover:underline"
-                                            >
-                                                View Profile
-                                            </Link>
                                         </div>
                                     </div>
-                                    <div className="space-y-3 text-sm">
+
+                                    {/* Contact Options */}
+                                    <div className="space-y-2">
                                         {event.organizer?.email && (
                                             <a
                                                 href={`mailto:${event.organizer.email}`}
-                                                className="flex items-center gap-2 text-gray-600 hover:text-primary-600"
+                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
                                             >
                                                 <Mail className="w-4 h-4" />
-                                                Contact Organizer
+                                                <span className="text-sm">{event.organizer.email}</span>
+                                            </a>
+                                        )}
+                                        {event.organizer?.phone && (
+                                            <a
+                                                href={`tel:${event.organizer.phone}`}
+                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+                                            >
+                                                <Phone className="w-4 h-4" />
+                                                <span className="text-sm">{event.organizer.phone}</span>
+                                            </a>
+                                        )}
+                                        {event.organizer?.whatsApp && (
+                                            <a
+                                                href={`https://wa.me/${event.organizer.whatsApp.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-600 transition-colors"
+                                            >
+                                                <MessageCircle className="w-4 h-4" />
+                                                <span className="text-sm">WhatsApp</span>
                                             </a>
                                         )}
                                         {event.organizer?.website && (
@@ -508,10 +664,32 @@ export default function PublicEventPage() {
                                                 href={event.organizer.website}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-gray-600 hover:text-primary-600"
+                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
                                             >
                                                 <Globe className="w-4 h-4" />
-                                                Website
+                                                <span className="text-sm">Website</span>
+                                            </a>
+                                        )}
+                                        {event.organizer?.facebook && (
+                                            <a
+                                                href={event.organizer.facebook}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                            >
+                                                <Facebook className="w-4 h-4" />
+                                                <span className="text-sm">Facebook</span>
+                                            </a>
+                                        )}
+                                        {event.organizer?.instagram && (
+                                            <a
+                                                href={event.organizer.instagram}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-colors"
+                                            >
+                                                <Instagram className="w-4 h-4" />
+                                                <span className="text-sm">Instagram</span>
                                             </a>
                                         )}
                                     </div>

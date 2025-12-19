@@ -115,34 +115,34 @@ export const Footer = () => {
                         <ul className="space-y-2">
                             <li>
                                 <Link
-                                    href="/category/restaurants"
+                                    href="/events"
                                     className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
                                 >
-                                    Restaurants
+                                    Events
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href="/category/shopping"
+                                    href="/directory-search"
                                     className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
                                 >
-                                    Shopping
+                                    Business
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href="/category/services"
+                                    href="/ad-search/?type=7"
                                     className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
                                 >
-                                    Services
+                                    Jobs
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href="/category/health"
+                                    href="/ad-search/?type=3"
                                     className="text-gray-400 hover:text-[var(--color-primary)] transition-colors"
                                 >
-                                    Health & Beauty
+                                    For Sale
                                 </Link>
                             </li>
                         </ul>
@@ -173,7 +173,7 @@ export const Footer = () => {
                 </div>
 
                 <div className="border-t border-gray-700 pt-6 text-center text-gray-500 text-sm">
-                    <p>&copy; {new Date().getFullYear()} Parlomo. All rights reserved.</p>
+                    <p>&copy; 2023-{new Date().getFullYear()} Parlomo. All rights reserved.</p>
                 </div>
             </div>
         </footer>

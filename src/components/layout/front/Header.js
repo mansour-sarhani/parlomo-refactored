@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Menu, X, Search, PlusCircle, Diamond, Rocket, Home } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { useTheme } from "@/contexts/ThemeContext";
 import { STORAGE_KEYS } from "@/constants/config";
 
 export const Header = () => {
+    const { theme } = useTheme();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         // Initialize from localStorage on client side
@@ -109,8 +112,18 @@ export const Header = () => {
                     {/* Left Side: Logo & Main Menu */}
                     <div className="flex items-center gap-8">
                         {/* Logo */}
-                        <Link href="/" className="text-2xl font-bold text-[var(--color-primary)]">
-                            Parlomo
+                        <Link href="/" className="flex items-center gap-2">
+                            <Image
+                                src={
+                                    theme === "dark"
+                                        ? "/assets/images/logo-white.png"
+                                        : "/assets/images/logo.png"
+                                }
+                                alt="Parlomo Logo"
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 object-contain"
+                            />
                         </Link>
 
                         {/* Main Menu - Desktop */}
@@ -170,7 +183,7 @@ export const Header = () => {
                     {/* Right Side: Community Care & Search */}
                     <div className="flex items-center gap-4 flex-1 justify-end">
                         {/* Search Bar - Desktop */}
-                        <div className="hidden md:flex max-w-xs relative">
+                        {/* <div className="hidden md:flex max-w-xs relative">
                             <input
                                 type="text"
                                 placeholder="Search..."
@@ -179,7 +192,7 @@ export const Header = () => {
                             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]">
                                 <Search size={18} />
                             </button>
-                        </div>
+                        </div> */}
 
                         {/* Community Care - Desktop */}
                         <Link
@@ -219,7 +232,7 @@ export const Header = () => {
 
                         <div className="p-4 flex flex-col gap-6">
                             {/* Search */}
-                            <div className="relative">
+                            {/* <div className="relative">
                                 <input
                                     type="text"
                                     placeholder="Search..."
@@ -229,7 +242,7 @@ export const Header = () => {
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]"
                                     size={20}
                                 />
-                            </div>
+                            </div> */}
 
                             {/* Main Navigation */}
                             <nav className="flex flex-col gap-2">

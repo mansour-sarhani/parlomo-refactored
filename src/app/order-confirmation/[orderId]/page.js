@@ -10,7 +10,16 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { FrontLayout } from "@/components/layout/FrontLayout";
-import { CheckCircle, Download, Calendar, Mail, Ticket, ArrowRight, MapPin, Clock } from "lucide-react";
+import {
+    CheckCircle,
+    Download,
+    Calendar,
+    Mail,
+    Ticket,
+    ArrowRight,
+    MapPin,
+    Clock,
+} from "lucide-react";
 import ticketingService from "@/services/ticketing.service";
 
 /**
@@ -18,24 +27,24 @@ import ticketingService from "@/services/ticketing.service";
  */
 function getCurrencySymbol(currency) {
     const symbols = {
-        GBP: '£',
-        USD: '$',
-        EUR: '€',
+        GBP: "£",
+        USD: "$",
+        EUR: "€",
     };
-    return symbols[currency] || currency || '£';
+    return symbols[currency] || currency || "£";
 }
 
 /**
  * Format date for display
  */
 function formatDate(dateString) {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+    return date.toLocaleDateString("en-GB", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
     });
 }
 
@@ -43,11 +52,11 @@ function formatDate(dateString) {
  * Format time for display
  */
 function formatTime(dateString) {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
+    return date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
     });
 }
 
@@ -56,7 +65,7 @@ export default function OrderConfirmationPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const orderId = params.orderId;
-    const email = searchParams.get('email');
+    const email = searchParams.get("email");
 
     const [orderData, setOrderData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -65,7 +74,7 @@ export default function OrderConfirmationPage() {
     useEffect(() => {
         const fetchOrder = async () => {
             if (!orderId || !email) {
-                setError('Missing order ID or email');
+                setError("Missing order ID or email");
                 setLoading(false);
                 return;
             }
@@ -75,11 +84,11 @@ export default function OrderConfirmationPage() {
                 if (response.success && response.data) {
                     setOrderData(response.data);
                 } else {
-                    setError(response.message || 'Failed to load order');
+                    setError(response.message || "Failed to load order");
                 }
             } catch (err) {
-                console.error('Error fetching order:', err);
-                setError(err.response?.data?.message || 'Failed to load order details');
+                console.error("Error fetching order:", err);
+                setError(err.response?.data?.message || "Failed to load order details");
             } finally {
                 setLoading(false);
             }
@@ -94,7 +103,7 @@ export default function OrderConfirmationPage() {
 
     const handleDownloadTickets = () => {
         if (orderData?.download_url) {
-            window.open(orderData.download_url, '_blank');
+            window.open(orderData.download_url, "_blank");
         }
     };
 
@@ -118,7 +127,7 @@ export default function OrderConfirmationPage() {
             <FrontLayout>
                 <div className="container mx-auto px-4 py-12">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <p className="text-red-600 font-medium">{error || 'Order not found'}</p>
+                        <p className="text-red-600 font-medium">{error || "Order not found"}</p>
                     </div>
                 </div>
             </FrontLayout>
@@ -158,14 +167,19 @@ export default function OrderConfirmationPage() {
                                 </div>
                             )}
                             <div className="p-6">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-4">{event.title}</h2>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                    {event.title}
+                                </h2>
                                 <div className="space-y-3 text-gray-600">
                                     <div className="flex items-start gap-3">
                                         <Calendar className="w-5 h-5 text-primary mt-0.5" />
                                         <div>
-                                            <p className="font-medium">{formatDate(event.start_date)}</p>
+                                            <p className="font-medium">
+                                                {formatDate(event.start_date)}
+                                            </p>
                                             <p className="text-sm">
-                                                {formatTime(event.start_date)} - {formatTime(event.end_date)}
+                                                {formatTime(event.start_date)} -{" "}
+                                                {formatTime(event.end_date)}
                                             </p>
                                         </div>
                                     </div>
@@ -180,9 +194,14 @@ export default function OrderConfirmationPage() {
                                         <div>
                                             <p className="font-medium">{event.venue_name}</p>
                                             <p className="text-sm">
-                                                {[event.address, event.city, event.postcode, event.country]
+                                                {[
+                                                    event.address,
+                                                    event.city,
+                                                    event.postcode,
+                                                    event.country,
+                                                ]
                                                     .filter(Boolean)
-                                                    .join(', ')}
+                                                    .join(", ")}
                                             </p>
                                         </div>
                                     </div>
@@ -194,16 +213,17 @@ export default function OrderConfirmationPage() {
                     {/* Order Details Card */}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
                         {/* Header */}
-                        <div className="bg-gradient-to-r from-primary to-primary-600 text-white p-6">
+                        <div className="bg-gradient-to-r from-primary to-primary-600  p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-primary-100 text-sm mb-1">Order Number</p>
-                                    <p className="text-2xl font-bold">{order.order_number}</p>
+                                    <p className="/80 text-sm mb-1">Order Number</p>
+                                    <p className="text-2xl font-bold ">{order.order_number}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-primary-100 text-sm mb-1">Total Paid</p>
-                                    <p className="text-2xl font-bold">
-                                        {currency}{(order.total / 100).toFixed(2)}
+                                    <p className="/80 text-sm mb-1">Total Paid</p>
+                                    <p className="text-2xl font-bold ">
+                                        {currency}
+                                        {(order.total / 100).toFixed(2)}
                                     </p>
                                 </div>
                             </div>
@@ -224,12 +244,14 @@ export default function OrderConfirmationPage() {
                                                     {item.ticket_type_name}
                                                 </p>
                                                 <p className="text-sm text-gray-600">
-                                                    Qty: {item.quantity} × {currency}{(item.unit_price / 100).toFixed(2)}
+                                                    Qty: {item.quantity} × {currency}
+                                                    {(item.unit_price / 100).toFixed(2)}
                                                 </p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="font-bold text-gray-900">
-                                                    {currency}{(item.subtotal / 100).toFixed(2)}
+                                                    {currency}
+                                                    {(item.subtotal / 100).toFixed(2)}
                                                 </p>
                                             </div>
                                         </div>
@@ -246,14 +268,18 @@ export default function OrderConfirmationPage() {
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Subtotal</span>
                                     <span className="font-semibold">
-                                        {currency}{(order.subtotal / 100).toFixed(2)}
+                                        {currency}
+                                        {(order.subtotal / 100).toFixed(2)}
                                     </span>
                                 </div>
                                 {order.discount > 0 && (
                                     <div className="flex justify-between text-sm text-green-600">
-                                        <span>Discount {order.promo_code && `(${order.promo_code})`}</span>
+                                        <span>
+                                            Discount {order.promo_code && `(${order.promo_code})`}
+                                        </span>
                                         <span className="font-semibold">
-                                            -{currency}{(order.discount / 100).toFixed(2)}
+                                            -{currency}
+                                            {(order.discount / 100).toFixed(2)}
                                         </span>
                                     </div>
                                 )}
@@ -261,7 +287,8 @@ export default function OrderConfirmationPage() {
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Fees</span>
                                         <span className="font-semibold">
-                                            {currency}{(order.fees / 100).toFixed(2)}
+                                            {currency}
+                                            {(order.fees / 100).toFixed(2)}
                                         </span>
                                     </div>
                                 )}
@@ -269,14 +296,16 @@ export default function OrderConfirmationPage() {
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Tax</span>
                                         <span className="font-semibold">
-                                            {currency}{(order.tax / 100).toFixed(2)}
+                                            {currency}
+                                            {(order.tax / 100).toFixed(2)}
                                         </span>
                                     </div>
                                 )}
                                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                                     <span className="font-bold text-gray-900">Total</span>
                                     <span className="font-bold text-xl text-primary">
-                                        {currency}{(order.total / 100).toFixed(2)}
+                                        {currency}
+                                        {(order.total / 100).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
@@ -305,7 +334,8 @@ export default function OrderConfirmationPage() {
                                 <h3 className="font-bold text-blue-900 mb-2">Your Tickets</h3>
                                 <p className="text-blue-800 text-sm mb-4">
                                     {tickets?.length || 0}{" "}
-                                    {(tickets?.length || 0) === 1 ? "ticket" : "tickets"} ready to use
+                                    {(tickets?.length || 0) === 1 ? "ticket" : "tickets"} ready to
+                                    use
                                 </p>
 
                                 {/* Ticket List */}
@@ -325,13 +355,15 @@ export default function OrderConfirmationPage() {
                                                             {ticket.code}
                                                         </p>
                                                     </div>
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                        ticket.status === 'valid'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : ticket.status === 'used'
-                                                            ? 'bg-gray-100 text-gray-700'
-                                                            : 'bg-red-100 text-red-700'
-                                                    }`}>
+                                                    <span
+                                                        className={`px-2 py-1 rounded text-xs font-medium ${
+                                                            ticket.status === "valid"
+                                                                ? "bg-green-100 text-green-700"
+                                                                : ticket.status === "used"
+                                                                  ? "bg-gray-100 text-gray-700"
+                                                                  : "bg-red-100 text-red-700"
+                                                        }`}
+                                                    >
                                                         {ticket.status}
                                                     </span>
                                                 </div>
@@ -346,13 +378,13 @@ export default function OrderConfirmationPage() {
                                 )}
 
                                 <div className="flex flex-wrap gap-3">
-                                    <button
+                                    {/* <button
                                         onClick={handleViewTickets}
-                                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                        className="bg-blue-600  px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
                                     >
                                         View Tickets
                                         <ArrowRight className="w-4 h-4" />
-                                    </button>
+                                    </button> */}
                                     {download_url && (
                                         <button
                                             onClick={handleDownloadTickets}

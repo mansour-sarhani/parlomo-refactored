@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, ChevronDown, X } from "lucide-react";
 import { navigation, adminNavigation, devNavigation } from "@/constants/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { checkMenuPermission } from "@/utils/permissions";
 import { api } from "@/lib/axios";
@@ -61,7 +62,11 @@ function filterNavigationItems(items, role, permissions, additionalChecks = {}) 
 export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
     const pathname = usePathname();
     const { user } = useAuth();
+    const { theme } = useTheme();
     const { permissions, role, loading: permissionsLoading } = usePermissions();
+
+    // Switch logo based on theme
+    const logoSrc = theme === "dark" ? "/assets/images/logo-white.png" : "/assets/images/logo.png";
     const [hasDirectory, setHasDirectory] = useState(false);
     const [openMenus, setOpenMenus] = useState({});
 
@@ -321,7 +326,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                     {!isCollapsed ? (
                         <div className="flex items-center gap-3 flex-1">
                             <Image
-                                src="/assets/images/logo.avif"
+                                src={logoSrc}
                                 alt="Parlomo Logo"
                                 width={36}
                                 height={36}
@@ -341,7 +346,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                             aria-label="Expand sidebar"
                         >
                             <Image
-                                src="/assets/images/logo.avif"
+                                src={logoSrc}
                                 alt="Parlomo Logo"
                                 width={40}
                                 height={40}
@@ -399,7 +404,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                     )}
 
                     {/* Dev Navigation */}
-                    {devNavigation && devNavigation.length > 0 && (
+                    {/* {devNavigation && devNavigation.length > 0 && (
                         <>
                             {!isCollapsed && (
                                 <div className="px-3 pt-4 pb-2">
@@ -413,7 +418,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                             )}
                             {devNavigation.map(renderMenuItem)}
                         </>
-                    )}
+                    )} */}
                 </nav>
 
                 {/* Expand button when collapsed */}
@@ -444,7 +449,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                     {!isCollapsed ? (
                         <div className="flex items-center gap-3">
                             <Image
-                                src="/assets/images/logo.avif"
+                                src={logoSrc}
                                 alt="Parlomo Logo"
                                 width={36}
                                 height={36}
@@ -471,7 +476,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                         </div>
                     ) : (
                         <Image
-                            src="/assets/images/logo.avif"
+                            src={logoSrc}
                             alt="Parlomo Logo"
                             width={40}
                             height={40}

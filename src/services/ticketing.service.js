@@ -409,21 +409,32 @@ const ticketingService = {
 
     /**
      * Get settlement requests for organizer
-     * @param {string} organizerId - Organizer ID
+     * @param {string} status - Optional status filter (PENDING, APPROVED, REJECTED, PAID)
      * @returns {Promise} Settlement requests
      */
-    async getSettlementRequests(organizerId) {
-        const response = await ticketingAxios.get(`/api/financials/settlements/organizer?organizerId=${organizerId}`);
+    async getSettlementRequests(status = null) {
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+        const queryString = params.toString();
+        const response = await ticketingAxios.get(`/api/financials/settlements/organizer${queryString ? `?${queryString}` : ''}`);
         return response.data;
     },
 
     /**
      * Create settlement request
      * @param {Object} data - Request data
-     * @returns {Promise} Created request
+     * @param {string} data.event_id - Event ID
+     * @param {string} data.payment_method - Payment method (bank_transfer, paypal, stripe)
+     * @param {Object} data.payment_details - Payment details (varies by method)
+     * @returns {Promise} Created settlement request
      */
     async createSettlementRequest(data) {
-        const response = await ticketingAxios.post('/api/financials/settlements', data);
+        const payload = {
+            event_id: data.event_id || data.eventId,
+            payment_method: data.payment_method || data.paymentMethod,
+            payment_details: data.payment_details || data.paymentDetails || {}
+        };
+        const response = await ticketingAxios.post('/api/financials/settlements', payload);
         return response.data;
     },
 
@@ -433,38 +444,169 @@ const ticketingService = {
      * @returns {Promise} Refund requests
      */
     async getRefundRequests(organizerId) {
-        const response = await ticketingAxios.get(`/api/financials/refunds/organizer?organizerId=${organizerId}`);
+        const response = await ticketingAxios.get(`/api/financials/refunds/organizer`);
         return response.data;
     },
 
     /**
      * Create refund request
-     * @param {Object} data - Request data (eventId, organizerId, reason, type)
-     * @returns {Promise} Created request
+     * @param {Object} data - Request data
+     * @param {string} data.eventId - Event ID
+     * @param {string} data.type - Refund type (EVENT_CANCELLATION, BULK_REFUND, SINGLE_ORDER)
+     * @param {string} data.reason - Refund reason (min 10 chars)
+     * @param {string} data.description - Optional additional description
+     * @param {Array<string>} data.orderIds - Order IDs (required for BULK_REFUND and SINGLE_ORDER)
+     * @param {number} data.finePercentage - Optional fine percentage (0-100)
+     * @param {string} data.fineReason - Required if finePercentage > 0
+     * @returns {Promise} Created refund request
      */
     async createRefundRequest(data) {
-        const { eventId, ...rest } = data;
-        const response = await ticketingAxios.patch(`/api/financials/refunds/${eventId}`, rest);
+        const { eventId, type, reason, description, orderIds, finePercentage, fineReason } = data;
+        const payload = {
+            event_id: eventId,
+            type,
+            reason,
+            description,
+            order_ids: orderIds || []
+        };
+
+        // Add fine fields if provided
+        if (finePercentage !== undefined && finePercentage > 0) {
+            payload.fine_percentage = finePercentage;
+            payload.fine_reason = fineReason;
+        }
+
+        const response = await ticketingAxios.post('/api/financials/refunds', payload);
+        return response.data;
+    },
+
+    /**
+     * Get refund request details
+     * @param {string} refundId - Refund request ID
+     * @returns {Promise} Detailed refund information
+     */
+    async getRefundRequestDetails(refundId) {
+        const response = await ticketingAxios.get(`/api/financials/refunds/${refundId}`);
+        return response.data;
+    },
+
+    /**
+     * Get refund audit logs (Admin)
+     * @param {string} refundId - Refund request ID
+     * @returns {Promise} Audit logs array
+     */
+    async getRefundAuditLogs(refundId) {
+        const response = await ticketingAxios.get(`/api/financials/refunds/${refundId}/audit-logs`);
+        return response.data;
+    },
+
+    /**
+     * Approve refund request (Admin)
+     * @param {string} refundId - Refund request ID
+     * @param {Object} data - Approval data
+     * @param {string} data.admin_notes - Optional admin notes
+     * @returns {Promise} Updated refund
+     */
+    async approveRefundRequest(refundId, data) {
+        const response = await ticketingAxios.patch(`/api/financials/refunds/${refundId}`, {
+            status: 'APPROVED',
+            admin_notes: data.admin_notes
+        });
+        return response.data;
+    },
+
+    /**
+     * Reject refund request (Admin)
+     * @param {string} refundId - Refund request ID
+     * @param {Object} data - Rejection data
+     * @param {string} data.rejection_reason - Required rejection reason
+     * @param {string} data.admin_notes - Optional admin notes
+     * @returns {Promise} Updated refund
+     */
+    async rejectRefundRequest(refundId, data) {
+        const response = await ticketingAxios.patch(`/api/financials/refunds/${refundId}`, {
+            status: 'REJECTED',
+            rejection_reason: data.rejection_reason,
+            admin_notes: data.admin_notes
+        });
+        return response.data;
+    },
+
+    /**
+     * Process refund (full or partial) (Admin)
+     * @param {string} refundId - Refund request ID
+     * @param {Object} data - Processing data
+     * @param {number} data.fine_amount - Optional fine amount in cents
+     * @param {string} data.fine_reason - Required if fine_amount > 0
+     * @returns {Promise} Processing result
+     */
+    async processRefund(refundId, data) {
+        const payload = {
+            status: 'PROCESSED'
+        };
+
+        if (data.fine_amount && data.fine_amount > 0) {
+            payload.fine_amount = data.fine_amount;
+            payload.fine_reason = data.fine_reason;
+        }
+
+        const response = await ticketingAxios.patch(`/api/financials/refunds/${refundId}`, payload);
         return response.data;
     },
 
     /**
      * Get all settlement requests (Admin)
-     * @returns {Promise} Settlement requests
+     * @param {Object} options - Query options
+     * @param {string} options.status - Optional status filter (PENDING, APPROVED, REJECTED, PAID)
+     * @param {number} options.page - Page number (default: 1)
+     * @returns {Promise} Settlement requests with pagination meta
      */
-    async getAllSettlementRequests() {
-        const response = await ticketingAxios.get('/api/financials/settlements/admin');
+    async getAllSettlementRequests({ status = null, page = 1 } = {}) {
+        const params = new URLSearchParams();
+        if (status && status !== 'ALL') params.append('status', status);
+        params.append('page', page.toString());
+        const queryString = params.toString();
+        const response = await ticketingAxios.get(`/api/financials/settlements/admin?${queryString}`);
         return response.data;
     },
 
     /**
      * Update settlement request (Admin)
-     * @param {string} id - Request ID
-     * @param {Object} updates - Updates (status, adminNotes)
-     * @returns {Promise} Updated request
+     * Supports approve, reject, and mark as paid actions
+     * @param {string} id - Settlement request ID
+     * @param {Object} updates - Updates to apply
+     * @param {string} updates.status - New status (APPROVED, REJECTED, PAID)
+     * @param {string} updates.admin_notes - Optional admin notes
+     * @param {number} updates.admin_adjustment - Optional adjustment in cents (for APPROVED)
+     * @param {string} updates.adjustment_reason - Required if admin_adjustment provided
+     * @param {string} updates.rejection_reason - Required for REJECTED status
+     * @param {string} updates.payout_method - Required for PAID status ('stripe' or 'manual')
+     * @param {string} updates.transaction_reference - Required for manual payout
+     * @param {string} updates.payment_description - Optional for manual payout
+     * @returns {Promise} Updated settlement request
      */
     async updateSettlementRequest(id, updates) {
         const response = await ticketingAxios.patch(`/api/financials/settlements/${id}`, updates);
+        return response.data;
+    },
+
+    /**
+     * Get settlement audit logs (Admin)
+     * @param {string} settlementId - Settlement request ID
+     * @returns {Promise} Audit logs array
+     */
+    async getSettlementAuditLogs(settlementId) {
+        const response = await ticketingAxios.get(`/api/financials/settlements/${settlementId}/audit-logs`);
+        return response.data;
+    },
+
+    /**
+     * Get Stripe account balance (Admin)
+     * Returns available and pending balance for payouts
+     * @returns {Promise} Stripe balance data
+     */
+    async getStripeBalance() {
+        const response = await ticketingAxios.get('/api/financials/settlements/stripe-balance');
         return response.data;
     },
 
@@ -485,6 +627,46 @@ const ticketingService = {
      */
     async updateRefundRequest(id, updates) {
         const response = await ticketingAxios.patch(`/api/financials/refunds/${id}`, updates);
+        return response.data;
+    },
+
+    // ==========================================
+    // Guest Refund Endpoints (Public - No Auth)
+    // ==========================================
+
+    /**
+     * Submit guest refund request
+     * Allows customers to request refunds without an account
+     * @param {Object} data - Request data
+     * @param {string} data.order_number - Order number (e.g., "ORD-2025-123456")
+     * @param {string} data.email - Customer email used during purchase
+     * @param {string} data.reason - Refund reason (event_cancelled, cannot_attend, duplicate_purchase, other)
+     * @param {string} data.description - Optional additional details (max 1000 chars)
+     * @returns {Promise} Refund request result with refund_id, amount, status
+     */
+    async submitGuestRefundRequest(data) {
+        const response = await ticketingAxios.post('/api/guest/refunds/request', {
+            order_number: data.order_number,
+            email: data.email,
+            reason: data.reason,
+            description: data.description || ''
+        });
+        return response.data;
+    },
+
+    /**
+     * Check guest refund status
+     * Allows customers to check the status of their refund request
+     * @param {Object} data - Lookup data
+     * @param {string} data.order_number - Order number
+     * @param {string} data.email - Customer email
+     * @returns {Promise} Refund status including has_refund_request, status, amount, dates
+     */
+    async checkGuestRefundStatus(data) {
+        const response = await ticketingAxios.post('/api/guest/refunds/status', {
+            order_number: data.order_number,
+            email: data.email
+        });
         return response.data;
     },
 };

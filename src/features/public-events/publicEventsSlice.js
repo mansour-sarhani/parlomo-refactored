@@ -72,6 +72,11 @@ export const normalizeEventData = (event) => ({
     venueName: event.venue_name,
     venueCapacity: event.venue_capacity,
     venueAddress: event.address,
+    venue: {
+        name: event.venue_name,
+        capacity: event.venue_capacity,
+        address: event.address,
+    },
     location: {
         address: event.address,
         city: event.city,
