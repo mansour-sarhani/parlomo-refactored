@@ -104,6 +104,13 @@ export const makeStore = () => {
                         "publicEventCategories/update/pending",
                         "publicEventCategories/update/fulfilled",
                         "publicEventCategories/update/rejected",
+                        // Public events with image uploads
+                        "publicEvents/createEvent/pending",
+                        "publicEvents/createEvent/fulfilled",
+                        "publicEvents/createEvent/rejected",
+                        "publicEvents/updateEvent/pending",
+                        "publicEvents/updateEvent/fulfilled",
+                        "publicEvents/updateEvent/rejected",
                     ],
                     // Ignore these paths in state for non-serializable values (File objects)
                     ignoredPaths: [

@@ -34,9 +34,10 @@ const PublicEventSchema = new mongoose.Schema(
         },
 
         // Organizer Information
+        // organizerId is optional at creation - backend populates from auth user if not provided
         organizerId: {
             type: String,
-            required: [true, 'Organizer ID is required'],
+            required: false,
             index: true,
         },
         organizer: {

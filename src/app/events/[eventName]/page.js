@@ -614,86 +614,88 @@ export default function PublicEventPage() {
                                     )}
                                 </div>
 
-                                {/* Organizer Card */}
-                                <div className="bg-white rounded-xl shadow-sm p-6">
-                                    <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-xl">
-                                            {event.organizer?.name?.charAt(0) || "O"}
+                                {/* Organizer Card - Only show if showOrganizerInfo is true */}
+                                {event.showOrganizerInfo && (
+                                    <div className="bg-white rounded-xl shadow-sm p-6">
+                                        <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-xl">
+                                                {event.organizer?.name?.charAt(0) || "O"}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-900">
+                                                    {event.organizer?.name}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-semibold text-gray-900">
-                                                {event.organizer?.name}
-                                            </p>
-                                        </div>
-                                    </div>
 
-                                    {/* Contact Options */}
-                                    <div className="space-y-2">
-                                        {event.organizer?.email && (
-                                            <a
-                                                href={`mailto:${event.organizer.email}`}
-                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
-                                            >
-                                                <Mail className="w-4 h-4" />
-                                                <span className="text-sm">{event.organizer.email}</span>
-                                            </a>
-                                        )}
-                                        {event.organizer?.phone && (
-                                            <a
-                                                href={`tel:${event.organizer.phone}`}
-                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
-                                            >
-                                                <Phone className="w-4 h-4" />
-                                                <span className="text-sm">{event.organizer.phone}</span>
-                                            </a>
-                                        )}
-                                        {event.organizer?.whatsApp && (
-                                            <a
-                                                href={`https://wa.me/${event.organizer.whatsApp.replace(/\D/g, '')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-600 transition-colors"
-                                            >
-                                                <MessageCircle className="w-4 h-4" />
-                                                <span className="text-sm">WhatsApp</span>
-                                            </a>
-                                        )}
-                                        {event.organizer?.website && (
-                                            <a
-                                                href={event.organizer.website}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
-                                            >
-                                                <Globe className="w-4 h-4" />
-                                                <span className="text-sm">Website</span>
-                                            </a>
-                                        )}
-                                        {event.organizer?.facebook && (
-                                            <a
-                                                href={event.organizer.facebook}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                            >
-                                                <Facebook className="w-4 h-4" />
-                                                <span className="text-sm">Facebook</span>
-                                            </a>
-                                        )}
-                                        {event.organizer?.instagram && (
-                                            <a
-                                                href={event.organizer.instagram}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-colors"
-                                            >
-                                                <Instagram className="w-4 h-4" />
-                                                <span className="text-sm">Instagram</span>
-                                            </a>
-                                        )}
+                                        {/* Contact Options */}
+                                        <div className="space-y-2">
+                                            {event.organizer?.email && (
+                                                <a
+                                                    href={`mailto:${event.organizer.email}`}
+                                                    className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+                                                >
+                                                    <Mail className="w-4 h-4" />
+                                                    <span className="text-sm">{event.organizer.email}</span>
+                                                </a>
+                                            )}
+                                            {event.organizer?.phone && (
+                                                <a
+                                                    href={`tel:${event.organizer.phone}`}
+                                                    className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+                                                >
+                                                    <Phone className="w-4 h-4" />
+                                                    <span className="text-sm">{event.organizer.phone}</span>
+                                                </a>
+                                            )}
+                                            {event.organizer?.whatsApp && (
+                                                <a
+                                                    href={`https://wa.me/${event.organizer.whatsApp.replace(/\D/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-green-50 hover:text-green-600 transition-colors"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    <span className="text-sm">WhatsApp</span>
+                                                </a>
+                                            )}
+                                            {event.organizer?.website && (
+                                                <a
+                                                    href={event.organizer.website}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+                                                >
+                                                    <Globe className="w-4 h-4" />
+                                                    <span className="text-sm">Website</span>
+                                                </a>
+                                            )}
+                                            {event.organizer?.facebook && (
+                                                <a
+                                                    href={event.organizer.facebook}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                >
+                                                    <Facebook className="w-4 h-4" />
+                                                    <span className="text-sm">Facebook</span>
+                                                </a>
+                                            )}
+                                            {event.organizer?.instagram && (
+                                                <a
+                                                    href={event.organizer.instagram}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-colors"
+                                                >
+                                                    <Instagram className="w-4 h-4" />
+                                                    <span className="text-sm">Instagram</span>
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>

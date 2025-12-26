@@ -18,7 +18,10 @@ import {
     Image,
     Shield,
     DollarSign,
+    Settings,
 } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { isAdminUser } from "@/utils/permissions";
 import { Button } from "@/components/common/Button";
 import { formatEventDateRange, getEventStatusColor } from "@/types/public-events-types";
 import { useState } from "react";
@@ -33,12 +36,22 @@ const EDIT_SECTIONS = [
     { id: "policies", label: "Policies & Settings", icon: Shield },
 ];
 
+const ADMIN_SECTIONS = [
+    { id: "admin-settings", label: "Admin Settings", icon: Settings },
+];
+
 export function EventsTable({ events, onView, onManageTicketing, onManageFinancials }) {
     const router = useRouter();
+    const { role } = usePermissions();
     const [openEditMenuId, setOpenEditMenuId] = useState(null);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const menuRef = useRef(null);
     const buttonRefs = useRef({});
+
+    // Combine edit sections with admin sections if user is admin
+    const allSections = isAdminUser(role)
+        ? [...EDIT_SECTIONS, ...ADMIN_SECTIONS]
+        : EDIT_SECTIONS;
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -344,7 +357,7 @@ export function EventsTable({ events, onView, onManageTicketing, onManageFinanci
                         className="py-1 rounded-lg"
                         style={{ backgroundColor: "var(--color-surface-primary, #ffffff)" }}
                     >
-                        {EDIT_SECTIONS.map((section) => {
+                        {allSections.map((section) => {
                             const Icon = section.icon;
                             return (
                                 <button

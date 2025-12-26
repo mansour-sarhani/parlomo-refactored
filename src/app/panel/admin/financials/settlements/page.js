@@ -779,6 +779,19 @@ export default function AdminSettlementsPage() {
                                                 />
                                             </p>
                                         </div>
+                                        {/* Parlomo fee when organizer pays */}
+                                        {selectedSettlement.fee_paid_by === 'organizer' && selectedSettlement.parlomo_fee > 0 && (
+                                            <div>
+                                                <span className="text-gray-600">Parlomo Fee ({selectedSettlement.parlomo_fee_percentage}%):</span>
+                                                <p className="font-medium text-red-600">
+                                                    -
+                                                    <CurrencyDisplay
+                                                        amount={selectedSettlement.parlomo_fee}
+                                                        currency={selectedSettlement.currency || "GBP"}
+                                                    />
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="pt-3 border-t">

@@ -43,6 +43,14 @@ export const userService = {
     },
 
     /**
+     * Get list of organizers for event creation (admin only)
+     * @returns {Promise<Object>} Response payload with organizers list
+     */
+    getOrganizers: async () => {
+        return await api.get('/api/user/admin/organizer');
+    },
+
+    /**
      * Update user profile via legacy admin endpoint
      * Mirrors legacy behaviour using multipart/form-data with _method PATCH
      */

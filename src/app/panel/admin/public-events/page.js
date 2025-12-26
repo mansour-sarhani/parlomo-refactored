@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Calendar, Filter, Search, ScanLine } from "lucide-react";
+import { Plus, Calendar, Filter } from "lucide-react";
 import { ContentWrapper } from "@/components/layout/ContentWrapper";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
@@ -13,31 +13,31 @@ import { Pagination } from "@/components/common/Pagination";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-    fetchMyEvents,
+    fetchAdminEvents,
     setFilters,
     clearFilters,
-    selectMyEvents,
+    selectAdminEvents,
     selectPagination,
     selectFilters,
     selectPublicEventsLoading,
     selectPublicEventsError,
-    selectEventCount,
+    selectAdminEventCount,
 } from "@/features/public-events/publicEventsSlice";
 import { EventsTable } from "@/components/public-events/EventsTable";
 import { EventFilters } from "@/components/public-events/EventFilters";
 
-export default function MyEventsPage() {
+export default function AdminEventsPage() {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useAuth();
 
-    const myEvents = useAppSelector(selectMyEvents);
+    const adminEvents = useAppSelector(selectAdminEvents);
     const pagination = useAppSelector(selectPagination);
     const filters = useAppSelector(selectFilters);
     const loading = useAppSelector(selectPublicEventsLoading);
     const error = useAppSelector(selectPublicEventsError);
-    const eventCount = useAppSelector(selectEventCount);
+    const eventCount = useAppSelector(selectAdminEventCount);
 
     const [showFilters, setShowFilters] = useState(false);
     const [showReloadNotice, setShowReloadNotice] = useState(false);
@@ -67,7 +67,7 @@ export default function MyEventsPage() {
     );
 
     useEffect(() => {
-        // Only fetch if user is authenticated (backend uses auth token, not user ID)
+        // Only fetch if user is authenticated
         if (!user) return;
 
         let page = parseInt(searchParams.get("page") || "1", 10);
@@ -84,7 +84,7 @@ export default function MyEventsPage() {
 
         // Fetch events
         dispatch(
-            fetchMyEvents({
+            fetchAdminEvents({
                 page,
                 limit: 10,
                 status,
@@ -102,7 +102,7 @@ export default function MyEventsPage() {
         setIsRefreshing(true);
         try {
             await dispatch(
-                fetchMyEvents({
+                fetchAdminEvents({
                     page: pagination.page,
                     limit: memoisedLimit,
                     ...filters,
@@ -118,7 +118,7 @@ export default function MyEventsPage() {
         } finally {
             setIsRefreshing(false);
         }
-    }, [dispatch, memoisedLimit, pagination.page, filters, user?.id]);
+    }, [dispatch, memoisedLimit, pagination.page, filters, user]);
 
     const handlePageChange = useCallback(
         (newPage) => {
@@ -202,11 +202,10 @@ export default function MyEventsPage() {
                         style={{ color: "var(--color-text-primary)" }}
                     >
                         <Calendar className="inline-block w-6 h-6 mr-2 mb-1" />
-                        My Events ({eventCount})
+                        All Events ({eventCount})
                     </h1>
                     <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                        Create and manage your ticketed events. Set up ticket types, track sales,
-                        and more.
+                        View and manage all public events across the platform.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -224,13 +223,6 @@ export default function MyEventsPage() {
                     </Button>
                     <Button variant="secondary" onClick={handleRefresh} loading={isRefreshing}>
                         Refresh
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        onClick={() => router.push("/panel/my-events/scanner")}
-                        icon={<ScanLine className="w-4 h-4" />}
-                    >
-                        Scanner
                     </Button>
                     <Button
                         onClick={() => router.push("/panel/my-events/create")}
@@ -304,32 +296,25 @@ export default function MyEventsPage() {
                         <p style={{ color: "var(--color-error)" }}>{error}</p>
                         <Button onClick={handleRefresh}>Try again</Button>
                     </div>
-                ) : myEvents.length === 0 ? (
+                ) : adminEvents.length === 0 ? (
                     <EmptyState
-                        icon={Plus}
+                        icon={Calendar}
                         title={hasActiveFilters ? "No events found" : "No events yet"}
                         description={
                             hasActiveFilters
                                 ? "Try adjusting your filters to find what you're looking for."
-                                : "Create your first event to start selling tickets and managing attendees."
+                                : "No public events have been created yet."
                         }
                         action={
                             hasActiveFilters ? (
                                 <Button onClick={handleClearFilters}>Clear filters</Button>
-                            ) : (
-                                <Button
-                                    onClick={() => router.push("/panel/my-events/create")}
-                                    icon={<Plus className="w-4 h-4" />}
-                                >
-                                    Create Your First Event
-                                </Button>
-                            )
+                            ) : null
                         }
                     />
                 ) : (
                     <>
                         <EventsTable
-                            events={myEvents}
+                            events={adminEvents}
                             onView={handleViewEvent}
                             onManageTicketing={handleManageTicketing}
                             onManageFinancials={handleManageFinancials}

@@ -59,12 +59,11 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         await connectDB();
-        
+
         const body = await request.json();
 
-        // Validate required fields
+        // Validate required fields (organizerId is optional - backend uses auth user if not provided)
         const requiredFields = [
-            'organizerId',
             'title',
             'description',
             'category',
@@ -93,6 +92,10 @@ export async function POST(request) {
                 { status: 400 }
             );
         }
+
+        // If organizerId not provided, it will be handled by the backend
+        // The backend should use the authenticated user's ID from the token
+        // For now, we pass the body as-is - the database layer will handle defaults
 
         // Create event
         const newEvent = await createPublicEvent(body);

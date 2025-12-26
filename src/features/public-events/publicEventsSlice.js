@@ -120,6 +120,10 @@ export const normalizeEventData = (event) => ({
         instagram: event.organizer_instagram || event.organizer?.instagram,
         whatsApp: event.organizer_whatsapp || event.organizer?.whatsapp,
     },
+    // Fee system fields
+    feePaidBy: event.fee_paid_by || event.feePaidBy || 'buyer',
+    showOrganizerInfo: event.show_organizer_info ?? event.showOrganizerInfo ?? false,
+    parlomoFeePercentage: event.parlomo_fee_percentage ?? event.platformFeePercentage ?? 0,
     createdAt: event.created_at,
     updatedAt: event.updated_at,
 });
@@ -134,6 +138,20 @@ export const fetchMyEvents = createAsyncThunk(
     async (params, { rejectWithValue }) => {
         try {
             return await publicEventsService.getMyEvents(params);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: 'Failed to fetch events' });
+        }
+    }
+);
+
+/**
+ * Fetch all events (admin only)
+ */
+export const fetchAdminEvents = createAsyncThunk(
+    'publicEvents/fetchAdminEvents',
+    async (params, { rejectWithValue }) => {
+        try {
+            return await publicEventsService.getAdminEvents(params);
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: 'Failed to fetch events' });
         }
@@ -308,6 +326,7 @@ export const fetchUpcomingEvents = createAsyncThunk(
 const initialState = {
     // Events data
     myEvents: [],
+    adminEvents: [],
     currentEvent: null,
     upcomingEvents: [],
 
@@ -423,6 +442,27 @@ const publicEventsSlice = createSlice({
                 } : state.pagination;
             })
             .addCase(fetchMyEvents.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.error || 'Failed to fetch events';
+            });
+
+        // Fetch Admin Events
+        builder
+            .addCase(fetchAdminEvents.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchAdminEvents.fulfilled, (state, action) => {
+                state.loading = false;
+                state.adminEvents = (action.payload.data || []).map(normalizeEventData);
+                state.pagination = action.payload.meta ? {
+                    page: action.payload.meta.current_page,
+                    limit: action.payload.meta.per_page,
+                    total: action.payload.meta.total,
+                    totalPages: action.payload.meta.last_page,
+                } : state.pagination;
+            })
+            .addCase(fetchAdminEvents.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload?.error || 'Failed to fetch events';
             });
@@ -667,6 +707,7 @@ export const {
 
 // Selectors
 export const selectMyEvents = (state) => state.publicEvents.myEvents;
+export const selectAdminEvents = (state) => state.publicEvents.adminEvents;
 export const selectCurrentEvent = (state) => state.publicEvents.currentEvent;
 export const selectUpcomingEvents = (state) => state.publicEvents.upcomingEvents;
 export const selectCategories = (state) => state.publicEvents.categories;
@@ -706,6 +747,7 @@ export const selectEventsByCategory = (state, category) =>
     });
 
 export const selectEventCount = (state) => state.publicEvents.myEvents.length;
+export const selectAdminEventCount = (state) => state.publicEvents.adminEvents.length;
 
 export const selectHasEvents = (state) => state.publicEvents.myEvents.length > 0;
 

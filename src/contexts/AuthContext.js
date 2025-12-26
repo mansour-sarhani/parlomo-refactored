@@ -51,11 +51,13 @@ export function AuthProvider({ children }) {
             if (storedUser) {
                 const parsedUser = JSON.parse(storedUser);
                 setAuthData(parsedUser);
-                setUser(parsedUser?.user || {
+                const derivedUser = parsedUser?.user || {
+                    id: parsedUser?.id,
                     name: parsedUser?.name,
                     email: parsedUser?.email,
                     username: parsedUser?.username,
-                });
+                };
+                setUser(derivedUser);
                 setIsAuthenticated(Boolean(parsedUser?.token));
             } else {
                 setUser(null);
@@ -81,6 +83,7 @@ export function AuthProvider({ children }) {
             setAuthData(payload);
             const derivedUser =
                 payload?.user || {
+                    id: payload?.id,
                     name: payload?.name,
                     email: payload?.email,
                     username: payload?.username,

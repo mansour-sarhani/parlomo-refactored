@@ -4,9 +4,9 @@ import { useMemo } from "react";
 
 import { Tabs } from "@/components/common/Tabs";
 import { ContentWrapper } from "@/components/layout/ContentWrapper";
-import { AdminSettingEditorCard } from "@/features/adminSettings";
+import { AdminSettingEditorCard, AdminSettingFeeCard } from "@/features/adminSettings";
 
-const SETTINGS_SECTIONS = [
+const EDITOR_SECTIONS = [
     {
         id: "privacy",
         label: "Privacy Policy",
@@ -20,7 +20,7 @@ const SETTINGS_SECTIONS = [
         label: "About Us",
         key: "About",
         title: "About Us Page",
-        description: "Tell customers about Parlomo’s story, mission, and values.",
+        description: "Tell customers about Parlomo's story, mission, and values.",
         helperText: "Use headings, paragraphs, and links to create a rich narrative.",
     },
     {
@@ -75,38 +75,73 @@ const SETTINGS_SECTIONS = [
         helperText: "Displayed in the business creation flows.",
         previewTitle: "Admin Preview",
     },
+    {
+        id: "public-event-terms",
+        label: "Event Terms",
+        key: "PublicEventParlomoTerms",
+        title: "Public Event Terms & Conditions",
+        description: "Define the terms and conditions for public event organizers and attendees.",
+        helperText: "Supports HTML. These terms will be displayed during event creation and ticket purchase.",
+        previewTitle: "Terms Preview",
+    },
 ];
 
-const DEFAULT_TAB = SETTINGS_SECTIONS[0]?.id;
+const FEE_SECTIONS = [
+    {
+        id: "public-event-fees",
+        label: "Public Event Fees",
+        key: "PublicEventFees",
+        title: "Public Event Fees",
+        description: "Set the admin percentage fee charged on public event ticket sales.",
+        helperText: "This percentage will be deducted from organizers' ticket revenue.",
+    },
+];
+
+const DEFAULT_TAB = EDITOR_SECTIONS[0]?.id;
 
 export default function AdminSettingsPage() {
-    const tabs = useMemo(
-        () =>
-            SETTINGS_SECTIONS.map(
-                ({
-                    id,
-                    label,
-                    key,
-                    title,
-                    description,
-                    helperText,
-                    previewTitle,
-                }) => ({
-                    id,
-                    label,
-                    content: (
-                        <AdminSettingEditorCard
-                            settingKey={key}
-                            title={title}
-                            description={description}
-                            helperText={helperText}
-                            previewTitle={previewTitle}
-                        />
-                    ),
-                })
-            ),
-        []
-    );
+    const tabs = useMemo(() => {
+        const editorTabs = EDITOR_SECTIONS.map(
+            ({
+                id,
+                label,
+                key,
+                title,
+                description,
+                helperText,
+                previewTitle,
+            }) => ({
+                id,
+                label,
+                content: (
+                    <AdminSettingEditorCard
+                        settingKey={key}
+                        title={title}
+                        description={description}
+                        helperText={helperText}
+                        previewTitle={previewTitle}
+                    />
+                ),
+            })
+        );
+
+        const feeTabs = FEE_SECTIONS.map(
+            ({ id, label, key, title, description, helperText }) => ({
+                id,
+                label,
+                content: (
+                    <AdminSettingFeeCard
+                        settingKey={key}
+                        title={title}
+                        description={description}
+                        helperText={helperText}
+                    />
+                ),
+            })
+        );
+
+        return [...editorTabs, ...feeTabs];
+    }, []);
 
     return (
         <ContentWrapper className="space-y-8">

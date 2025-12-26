@@ -10,6 +10,8 @@ import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppDispatch } from "@/lib/hooks";
+import { usePermissions } from "@/hooks/usePermissions";
+import { isAdminUser } from "@/utils/permissions";
 import { fetchEventById, updateEvent, normalizeEventData } from "@/features/public-events/publicEventsSlice";
 import { EventSectionEdit } from "@/components/public-events/EventSectionEdit";
 
@@ -21,11 +23,13 @@ const SECTIONS = {
     ticketing: { title: "Ticketing Settings", step: 5 },
     media: { title: "Media", step: 6 },
     policies: { title: "Policies & Settings", step: 7 },
+    "admin-settings": { title: "Admin Settings", step: 8, adminOnly: true },
 };
 
 export default function EditSectionPage({ params }) {
     const { id, section } = use(params);
     const { user } = useAuth();
+    const { role } = usePermissions();
     const router = useRouter();
     const dispatch = useAppDispatch();
 
@@ -35,6 +39,7 @@ export default function EditSectionPage({ params }) {
     const [error, setError] = useState(null);
 
     const sectionConfig = SECTIONS[section];
+    const userIsAdmin = isAdminUser(role);
 
     useEffect(() => {
         if (!id) return;
@@ -114,8 +119,28 @@ export default function EditSectionPage({ params }) {
         );
     }
 
-    // Check ownership
-    if (user && event.organizerId !== user.id) {
+    // Check access permissions
+    // Admin-only sections require admin role
+    if (sectionConfig?.adminOnly && !userIsAdmin) {
+        return (
+            <ContentWrapper>
+                <div className="text-center py-12">
+                    <h2 className="text-xl font-bold mb-2" style={{ color: "var(--color-error)" }}>
+                        Access Denied
+                    </h2>
+                    <p className="mb-4" style={{ color: "var(--color-text-secondary)" }}>
+                        This section is only accessible to administrators.
+                    </p>
+                    <Button onClick={() => router.push(`/panel/my-events/${id}`)}>
+                        Back to Event
+                    </Button>
+                </div>
+            </ContentWrapper>
+        );
+    }
+
+    // Check ownership for non-admin sections (admins can access all events)
+    if (!userIsAdmin && user && event.organizerId !== user.id) {
         return (
             <ContentWrapper>
                 <div className="text-center py-12">

@@ -9,6 +9,8 @@ import { Card } from "@/components/common/Card";
 import { useAppDispatch } from "@/lib/hooks";
 import { createEvent, updateEvent } from "@/features/public-events/publicEventsSlice";
 import { DEFAULT_EVENT_VALUES } from "@/types/public-events-types";
+import { usePermissions } from "@/hooks/usePermissions";
+import { userService } from "@/services/user.service";
 
 // Step components
 import { EventDetailsStep } from "./EventDetailsStep";
@@ -32,8 +34,14 @@ const STEPS = [
 export function EventForm({ initialData = null, mode = "create", organizerId }) {
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const { role, loading: permissionsLoading } = usePermissions();
+
+    // Check if user is admin (super-admin or system-admin)
+    const isAdmin = role === "super-admin" || role === "system-admin";
 
     const [currentStep, setCurrentStep] = useState(1);
+    const [organizers, setOrganizers] = useState([]);
+    const [organizersLoading, setOrganizersLoading] = useState(false);
 
     // Normalize initial data - convert nested MongoDB structure to flat form fields
     const normalizeInitialData = (data) => {
@@ -85,14 +93,35 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
     const [isSaving, setIsSaving] = useState(false);
 
     // Update organizerId in formData when prop changes (e.g. after auth fetch)
+    // Only for non-admins who use their own ID
     useEffect(() => {
-        if (organizerId) {
+        if (organizerId && !isAdmin) {
             setFormData(prev => ({
                 ...prev,
                 organizerId
             }));
         }
-    }, [organizerId]);
+    }, [organizerId, isAdmin]);
+
+    // Fetch organizers list for admins
+    useEffect(() => {
+        if (isAdmin && !permissionsLoading) {
+            setOrganizersLoading(true);
+            userService.getOrganizers()
+                .then(response => {
+                    // API returns { data: [...] }, axios wraps in response.data
+                    const organizersList = response.data?.data || response.data || [];
+                    setOrganizers(Array.isArray(organizersList) ? organizersList : []);
+                })
+                .catch(error => {
+                    console.error('Failed to fetch organizers:', error);
+                    toast.error('Failed to load organizers list');
+                })
+                .finally(() => {
+                    setOrganizersLoading(false);
+                });
+        }
+    }, [isAdmin, permissionsLoading]);
 
     const CurrentStepComponent = STEPS[currentStep - 1].component;
 
@@ -132,6 +161,10 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                 }
                 if (!formData.category_id) {
                     stepErrors.category_id = "Event category is required";
+                }
+                // Admins must select an organizer
+                if (isAdmin && !formData.organizerId) {
+                    stepErrors.organizerId = "Please select an organizer";
                 }
                 break;
 
@@ -218,9 +251,12 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                 // No required fields
                 break;
 
-            case 7: // Policies (optional)
+            case 7: // Policies & Settings
                 if (formData.taxRate < 0 || formData.taxRate > 100) {
                     stepErrors.taxRate = "Tax rate must be between 0 and 100";
+                }
+                if (!formData.agreedToTerms) {
+                    stepErrors.agreedToTerms = "You must agree to the Platform Terms & Conditions to create an event";
                 }
                 break;
         }
@@ -252,7 +288,8 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
         try {
             const eventData = {
                 ...formData,
-                organizerId: formData.organizerId || organizerId, // Ensure organizerId is always present
+                // For admins: use selected organizerId; for non-admins: null (backend uses auth user)
+                organizerId: isAdmin ? formData.organizerId : null,
                 status: "draft",
                 isPublic: false,
             };
@@ -295,7 +332,8 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
         try {
             const eventData = {
                 ...formData,
-                organizerId: formData.organizerId || organizerId, // Ensure organizerId is always present
+                // For admins: use selected organizerId; for non-admins: null (backend uses auth user)
+                organizerId: isAdmin ? formData.organizerId : null,
                 status: "published",
                 isPublic: true,
             };
@@ -314,7 +352,12 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
             const event = result.data || result.event;
             router.push(`/panel/my-events/${event.id}`);
         } catch (error) {
-            toast.error(error.error || error.message || "Failed to publish event");
+            // Show specific validation errors if available
+            if (error.errors && Array.isArray(error.errors)) {
+                error.errors.forEach(err => toast.error(err));
+            } else {
+                toast.error(error.error || error.message || "Failed to publish event");
+            }
         } finally {
             setIsSaving(false);
         }
@@ -403,6 +446,10 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                     errors={errors}
                     onChange={handleFieldChange}
                     onMultipleChange={handleMultipleFieldsChange}
+                    isAdmin={isAdmin}
+                    mode={mode}
+                    organizers={organizers}
+                    organizersLoading={organizersLoading}
                 />
             </Card>
 

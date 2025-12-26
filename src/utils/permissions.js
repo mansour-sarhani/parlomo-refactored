@@ -43,6 +43,15 @@ export function isSuperAdmin(role) {
 }
 
 /**
+ * Check if user is an admin (super-admin or system-admin)
+ * @param {string} role - User role
+ * @returns {boolean}
+ */
+export function isAdminUser(role) {
+    return role === "super-admin" || role === "system-admin";
+}
+
+/**
  * Check if user has access based on role OR permission group
  * @param {string} role - User role
  * @param {Array} userPermissions - Array of permission groups

@@ -63,7 +63,12 @@
  * // Tax & Fees Configuration
  * @property {boolean} taxInclusive - Whether displayed prices include tax
  * @property {number} taxRate - Tax percentage (e.g., 8.5 for 8.5%)
- * 
+ *
+ * // Parlomo Fee System
+ * @property {number} parlomoFeePercentage - Platform fee percentage (0-100)
+ * @property {'buyer' | 'organizer'} feePaidBy - Who pays the platform fee
+ * @property {boolean} showOrganizerInfo - Whether organizer info is publicly visible (admin-only)
+ *
  * // Metadata
  * @property {string} createdAt - ISO 8601 timestamp of creation
  * @property {string} updatedAt - ISO 8601 timestamp of last update
@@ -209,6 +214,9 @@ export const DEFAULT_EVENT_VALUES = {
     organizerWhatsApp: null,
     serviceCharges: [],
     videoUrl: null,
+    fee_paid_by: 'buyer', // 'buyer' = fee added to ticket price, 'organizer' = fee deducted from earnings
+    show_organizer_info: false, // Admin-only: controls organizer contact visibility
+    agreedToTerms: false, // Must agree to platform terms before creating event
 };
 
 /**

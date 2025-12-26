@@ -65,19 +65,26 @@ export const navigation = [
     {
         name: "Events",
         icon: CalendarDays,
-        // User-facing events menu
+        permission: {
+            groupName: "Public Event",
+        },
         children: [
             {
                 name: "My Events",
                 href: "/panel/my-events",
                 icon: CalendarDays,
-                // Always visible for users
+                permission: {
+                    groupName: "Public Event",
+                },
             },
             {
                 name: "Create Event",
                 href: "/panel/my-events/create",
                 icon: ClipboardPlus,
-                // Always visible for users
+                permission: {
+                    groupName: "Public Event",
+                    permission: "create PublicEvent",
+                },
             },
         ],
     },
@@ -188,6 +195,14 @@ export const adminNavigation = [
             groupName: "Admin",
         },
         children: [
+            {
+                name: "All Events",
+                href: "/panel/admin/public-events",
+                icon: CalendarDays,
+                permission: {
+                    groupName: "Admin",
+                },
+            },
             {
                 name: "Categories",
                 href: "/panel/admin/public-events/categories",

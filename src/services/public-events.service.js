@@ -28,6 +28,9 @@ const parseAgeRestriction = (value) => {
 const transformToFormData = (data) => {
     const formData = new FormData();
 
+    // Organizer ID - only append if provided (null means backend uses auth user)
+    if (data.organizerId) formData.append('organizerId', data.organizerId);
+
     // Text fields - only append if value exists
     if (data.status) formData.append('status', data.status);
     if (data.category_id) formData.append('category_id', data.category_id);
@@ -63,6 +66,21 @@ const transformToFormData = (data) => {
     // Send show_remaining_tickets if backend supports it
     if (data.showRemainingTickets !== undefined) {
         formData.append('show_remaining_tickets', data.showRemainingTickets ? '1' : '0');
+    }
+
+    // Send show_organizer_info for admin settings
+    if (data.showOrganizerInfo !== undefined) {
+        formData.append('show_organizer_info', data.showOrganizerInfo ? '1' : '0');
+    }
+
+    // Send parlomo_fee_percentage for admin settings
+    if (data.parlomoFeePercentage !== undefined && data.parlomoFeePercentage !== null) {
+        formData.append('parlomo_fee_percentage', data.parlomoFeePercentage);
+    }
+
+    // Send fee_paid_by (buyer or organizer)
+    if (data.fee_paid_by) {
+        formData.append('fee_paid_by', data.fee_paid_by);
     }
 
     // Organizer fields
@@ -184,6 +202,27 @@ const publicEventsService = {
      * @returns {Promise} Organizer's events
      */
     async getMyEvents(params = {}) {
+        const queryString = new URLSearchParams(
+            Object.entries(params).reduce((acc, [key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    acc[key] = value;
+                }
+                return acc;
+            }, {})
+        ).toString();
+
+        const response = await ticketingAxios.get(
+            `/api/public-events/my-event${queryString ? `?${queryString}` : ''}`
+        );
+        return response.data;
+    },
+
+    /**
+     * Get all events (admin only)
+     * @param {Object} params - Query parameters
+     * @returns {Promise} All events for admin view
+     */
+    async getAdminEvents(params = {}) {
         const queryString = new URLSearchParams(
             Object.entries(params).reduce((acc, [key, value]) => {
                 if (value !== null && value !== undefined && value !== '') {
@@ -448,9 +487,8 @@ const publicEventsService = {
     validateEventData(eventData) {
         const errors = [];
 
-        // Required fields
+        // Required fields (organizerId is optional - backend uses auth user if not provided)
         const requiredFields = [
-            { field: 'organizerId', message: 'Organizer ID is required' },
             { field: 'title', message: 'Event title is required' },
             { field: 'description', message: 'Event description is required' },
             { field: 'category_id', message: 'Event category is required' },
@@ -468,16 +506,8 @@ const publicEventsService = {
 
         requiredFields.forEach(({ field, message }) => {
             const value = eventData[field];
-            // For organizerId (number), check if it exists and is not null/undefined
-            // For strings, check if they exist and are not empty after trimming
-            if (field === 'organizerId') {
-                if (value === null || value === undefined || value === '') {
-                    errors.push(message);
-                }
-            } else {
-                if (!value || (typeof value === 'string' && value.trim() === '')) {
-                    errors.push(message);
-                }
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+                errors.push(message);
             }
         });
 

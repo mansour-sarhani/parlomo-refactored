@@ -13,6 +13,7 @@ import { EventOrganizerStep } from "./EventOrganizerStep";
 import { EventTicketingStep } from "./EventTicketingStep";
 import { EventMediaStep } from "./EventMediaStep";
 import { EventPoliciesStep } from "./EventPoliciesStep";
+import { EventAdminSettingsStep } from "./EventAdminSettingsStep";
 
 const SECTION_COMPONENTS = {
     details: EventDetailsStep,
@@ -22,6 +23,7 @@ const SECTION_COMPONENTS = {
     ticketing: EventTicketingStep,
     media: EventMediaStep,
     policies: EventPoliciesStep,
+    "admin-settings": EventAdminSettingsStep,
 };
 
 const SECTION_VALIDATORS = {
@@ -78,6 +80,7 @@ const SECTION_VALIDATORS = {
         }
         return errors;
     },
+    "admin-settings": () => ({}), // Admin settings - no required fields
 };
 
 export function EventSectionEdit({ section, event, onSave, saving, onCancel }) {
@@ -116,6 +119,10 @@ export function EventSectionEdit({ section, event, onSave, saving, onCancel }) {
             organizerFacebook: data.organizer?.facebook || data.organizerFacebook || '',
             organizerInstagram: data.organizer?.instagram || data.organizerInstagram || '',
             organizerWhatsApp: data.organizer?.whatsapp || data.organizerWhatsApp || '',
+            // Admin settings
+            showOrganizerInfo: data.show_organizer_info ?? data.showOrganizerInfo ?? false,
+            parlomoFeePercentage: data.parlomo_fee_percentage ?? data.parlomoFeePercentage ?? 0,
+            fee_paid_by: data.fee_paid_by ?? data.feePaidBy ?? 'buyer',
         };
     };
 

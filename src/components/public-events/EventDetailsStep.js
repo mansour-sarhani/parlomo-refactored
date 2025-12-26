@@ -6,7 +6,7 @@ import { fetchCategories, selectCategories } from "@/features/public-events/publ
 import { RichTextEditor } from "@/components/forms/RichTextEditor";
 import { TagInput } from "@/components/forms/TagInput";
 
-export function EventDetailsStep({ formData, errors, onChange }) {
+export function EventDetailsStep({ formData, errors, onChange, isAdmin, organizers = [], organizersLoading }) {
     const dispatch = useAppDispatch();
     const categories = useAppSelector(selectCategories);
 
@@ -97,6 +97,48 @@ export function EventDetailsStep({ formData, errors, onChange }) {
                     </p>
                 )}
             </div>
+
+            {/* Organizer Selection - Only visible to admins */}
+            {isAdmin && (
+                <div>
+                    <label
+                        htmlFor="organizerId"
+                        className="block text-sm font-medium mb-2"
+                        style={{ color: "var(--color-text-secondary)" }}
+                    >
+                        Event Organizer *
+                    </label>
+                    <select
+                        id="organizerId"
+                        value={formData.organizerId || ""}
+                        onChange={(e) => onChange("organizerId", e.target.value || null)}
+                        disabled={organizersLoading}
+                        className="w-full px-4 py-2 rounded border"
+                        style={{
+                            backgroundColor: "var(--color-surface-primary)",
+                            borderColor: errors.organizerId ? "var(--color-error)" : "var(--color-border)",
+                            color: "var(--color-text-primary)",
+                        }}
+                    >
+                        <option value="">
+                            {organizersLoading ? "Loading organizers..." : "Select an organizer"}
+                        </option>
+                        {organizers.map((org) => (
+                            <option key={org.id || org.publicId} value={org.id || org.publicId}>
+                                {org.name || org.username} {org.email ? `(${org.email})` : ""}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.organizerId && (
+                        <p className="text-sm mt-1" style={{ color: "var(--color-error)" }}>
+                            {errors.organizerId}
+                        </p>
+                    )}
+                    <p className="text-xs mt-1" style={{ color: "var(--color-text-tertiary)" }}>
+                        As an admin, you can create events on behalf of any organizer.
+                    </p>
+                </div>
+            )}
 
             {/* Tags - Tag Input Component */}
             <div>

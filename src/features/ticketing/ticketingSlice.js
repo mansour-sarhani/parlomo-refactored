@@ -309,12 +309,16 @@ const ticketingSlice = createSlice({
                     discount: sessionData.discount || sessionData.discount_amount || sessionData.calculated_discount || 0,
                     promoCode: sessionData.promo_code || sessionData.promoCode,
                     promoCodeId: sessionData.promo_code_id || sessionData.promoCodeId,
-                    taxFee: sessionData.fees || 0, // "fees" is the tax fee
+                    tax: sessionData.tax || 0, // Actual tax amount
+                    fees: sessionData.fees || 0, // Total fees (includes parlomo_fee when buyer pays)
                     feeBreakdown: sessionData.fee_breakdown?.map(fee => ({
                         name: fee.name,
                         amount: fee.amount,
                         type: fee.type,
-                    })) || [], // Service charges
+                    })) || [], // Fee breakdown with names
+                    parlomoFee: sessionData.parlomo_fee || 0,
+                    parlomoFeePercentage: sessionData.parlomo_fee_percentage || 0,
+                    feePaidBy: sessionData.fee_paid_by || 'buyer',
                     total: sessionData.total,
                     currency: sessionData.currency,
                     status: sessionData.status,

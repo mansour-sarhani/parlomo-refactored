@@ -144,7 +144,7 @@ export default function CheckoutPage() {
                 buyerInfo,
                 subtotal: checkoutSession.subtotal,
                 discount: checkoutSession.discount,
-                fees: checkoutSession.taxFee,
+                fees: checkoutSession.fees,
                 feeBreakdown: checkoutSession.feeBreakdown,
                 total: checkoutSession.total,
                 promoCode: checkoutSession.promoCode,
@@ -459,19 +459,19 @@ export default function CheckoutPage() {
                                         </div>
                                     )}
 
-                                    {/* Service Charges (fee_breakdown) */}
-                                    {checkoutSession.feeBreakdown?.map((fee, index) => (
+                                    {/* Service Charges (fee_breakdown) - Only show when buyer pays */}
+                                    {checkoutSession.feePaidBy === 'buyer' && checkoutSession.feeBreakdown?.map((fee, index) => (
                                         <div key={index} className="flex justify-between text-sm">
                                             <span className="text-gray-600">{fee.name}</span>
                                             <span className="font-semibold">£{(fee.amount / 100).toFixed(2)}</span>
                                         </div>
                                     ))}
 
-                                    {/* Tax Fee */}
-                                    {checkoutSession.taxFee > 0 && (
+                                    {/* Tax */}
+                                    {checkoutSession.tax > 0 && (
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Tax</span>
-                                            <span className="font-semibold">£{(checkoutSession.taxFee / 100).toFixed(2)}</span>
+                                            <span className="font-semibold">£{(checkoutSession.tax / 100).toFixed(2)}</span>
                                         </div>
                                     )}
 

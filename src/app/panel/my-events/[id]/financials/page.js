@@ -1121,6 +1121,13 @@ export default function EventFinancialsPage({ params }) {
                                     <span className="text-gray-600">Total Refunds:</span>
                                     <p className="font-medium text-red-600">-{formatCurrency(financials?.total_refunded)}</p>
                                 </div>
+                                {/* Platform fee deduction when organizer pays */}
+                                {financials?.fee_paid_by === 'organizer' && financials?.parlomo_fee > 0 && (
+                                    <div>
+                                        <span className="text-gray-600">Platform Fee ({financials?.parlomo_fee_percentage}%):</span>
+                                        <p className="font-medium text-red-600">-{formatCurrency(financials?.parlomo_fee)}</p>
+                                    </div>
+                                )}
                                 <div>
                                     <span className="text-gray-600 font-semibold">Net Settlement:</span>
                                     <p className="text-2xl font-bold text-green-600">{formatCurrency(financials?.net_revenue)}</p>

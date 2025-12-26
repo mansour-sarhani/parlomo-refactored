@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ContentWrapper } from "@/components/layout/ContentWrapper";
 import { Card, CardHeader } from "@/components/common/Card";
@@ -8,6 +8,8 @@ import { Button } from "@/components/common/Button";
 import { ConfirmModal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppDispatch } from "@/lib/hooks";
+import { usePermissions } from "@/hooks/usePermissions";
+import { isAdminUser } from "@/utils/permissions";
 import {
     fetchEventById,
     fetchEventStats,
@@ -39,15 +41,40 @@ import {
     ShoppingCart,
     Package,
     CheckCircle,
+    Edit,
+    ChevronDown,
+    FileText,
+    Clock,
+    MapPinned,
+    User,
+    CreditCard,
+    Image,
+    Shield,
+    Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatEventDateRange, getEventStatusColor } from "@/types/public-events-types";
 import { use } from "react";
 import { MapDisplay } from "@/components/common/map/LazyMapDisplay";
 
+const EDIT_SECTIONS = [
+    { id: "details", label: "Event Details", icon: FileText },
+    { id: "datetime", label: "Date & Time", icon: Clock },
+    { id: "location", label: "Location", icon: MapPinned },
+    { id: "organizer", label: "Organizer Info", icon: User },
+    { id: "ticketing", label: "Ticketing Settings", icon: CreditCard },
+    { id: "media", label: "Media", icon: Image },
+    { id: "policies", label: "Policies & Settings", icon: Shield },
+];
+
+const ADMIN_SECTIONS = [
+    { id: "admin-settings", label: "Admin Settings", icon: Settings },
+];
+
 export default function ViewEventPage({ params }) {
     const { id } = use(params);
     const { user } = useAuth();
+    const { role } = usePermissions();
     const router = useRouter();
     const dispatch = useAppDispatch();
 
@@ -57,6 +84,61 @@ export default function ViewEventPage({ params }) {
     const [actionLoading, setActionLoading] = useState(false);
     const [pendingStatus, setPendingStatus] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null });
+    const [openEditMenu, setOpenEditMenu] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+    const menuRef = useRef(null);
+    const buttonRef = useRef(null);
+
+    // Combine edit sections with admin sections if user is admin
+    const allSections = isAdminUser(role)
+        ? [...EDIT_SECTIONS, ...ADMIN_SECTIONS]
+        : EDIT_SECTIONS;
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                if (buttonRef.current && !buttonRef.current.contains(event.target)) {
+                    setOpenEditMenu(false);
+                }
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // Close menu on scroll
+    useEffect(() => {
+        const handleScroll = () => {
+            if (openEditMenu) {
+                setOpenEditMenu(false);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll, true);
+        return () => window.removeEventListener("scroll", handleScroll, true);
+    }, [openEditMenu]);
+
+    const handleToggleMenu = () => {
+        if (openEditMenu) {
+            setOpenEditMenu(false);
+        } else {
+            if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setMenuPosition({
+                    top: rect.bottom + 4,
+                    left: rect.right - 224, // 224px = w-56 (14rem)
+                });
+            }
+            setOpenEditMenu(true);
+        }
+    };
+
+    const handleEditSection = (sectionId) => {
+        setOpenEditMenu(false);
+        router.push(`/panel/my-events/${id}/edit/${sectionId}`);
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -272,6 +354,21 @@ export default function ViewEventPage({ params }) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {/* Edit Dropdown */}
+                    <div className="relative">
+                        <div ref={buttonRef}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleToggleMenu}
+                                icon={<Edit className="w-4 h-4" />}
+                            >
+                                Edit
+                                <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${openEditMenu ? 'rotate-180' : ''}`} />
+                            </Button>
+                        </div>
+                    </div>
+
                     {event.status === "draft" && (
                         <Button
                             onClick={() => openConfirmModal("publish")}
@@ -746,6 +843,50 @@ export default function ViewEventPage({ params }) {
                     </Card>
                 </div>
             </div>
+
+            {/* Fixed position dropdown menu - rendered outside normal flow for proper z-index */}
+            {openEditMenu && (
+                <div
+                    ref={menuRef}
+                    className="fixed w-56 rounded-lg shadow-xl border z-[9999]"
+                    style={{
+                        top: menuPosition.top,
+                        left: menuPosition.left,
+                        backgroundColor: "var(--color-surface-primary, #ffffff)",
+                        borderColor: "var(--color-border)",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+                    }}
+                >
+                    <div
+                        className="py-1 rounded-lg"
+                        style={{ backgroundColor: "var(--color-surface-primary, #ffffff)" }}
+                    >
+                        {allSections.map((section) => {
+                            const Icon = section.icon;
+                            return (
+                                <button
+                                    key={section.id}
+                                    onClick={() => handleEditSection(section.id)}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                                    style={{
+                                        color: "var(--color-text-primary, #1f2937)",
+                                        backgroundColor: "var(--color-surface-primary, #ffffff)",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = "var(--color-surface-secondary, #f3f4f6)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = "var(--color-surface-primary, #ffffff)";
+                                    }}
+                                >
+                                    <Icon className="w-4 h-4" style={{ color: "var(--color-text-tertiary, #6b7280)" }} />
+                                    {section.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Confirmation Modal */}
             <ConfirmModal
