@@ -9,7 +9,7 @@ import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import ticketingService from "@/services/ticketing.service";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, DollarSign, Plus, AlertCircle, ShoppingCart, Ticket, TrendingUp, Calendar, BarChart3, RefreshCcw, User, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, DollarSign, Plus, AlertCircle, ShoppingCart, Ticket, TrendingUp, Calendar, BarChart3, RefreshCcw, User, Users, Wallet, Percent, Receipt, Tag, Building2 } from "lucide-react";
 import { RefundStatusBadge } from "@/components/refunds/RefundStatusBadge";
 import { RefundTypeBadge } from "@/components/refunds/RefundTypeBadge";
 import { CurrencyDisplay } from "@/components/refunds/CurrencyDisplay";
@@ -681,45 +681,57 @@ export default function EventFinancialsPage({ params }) {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
-                    {/* Financial Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <Card className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-green-50 text-green-600">
-                                    <TrendingUp className="w-5 h-5" />
+                    {/* Hero Card - Your Earnings */}
+                    <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-green-100 text-green-600">
+                                    <Wallet className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Gross Revenue</p>
-                                    <p className="text-xl font-bold text-green-600">
-                                        {formatCurrency(financials?.total_sales)}
+                                    <p className="text-sm font-medium text-green-700">Your Earnings (Available for Settlement)</p>
+                                    <p className="text-3xl font-bold text-green-600">
+                                        {formatCurrency(financials?.organizer_payout)}
+                                    </p>
+                                    <p className="text-xs text-green-600 mt-1">
+                                        After platform fees • Request settlement from the Settlements tab
                                     </p>
                                 </div>
                             </div>
-                        </Card>
+                            <Button
+                                onClick={() => setActiveTab('settlements')}
+                                className="bg-green-600 hover:bg-green-700"
+                            >
+                                Request Settlement
+                            </Button>
+                        </div>
+                    </Card>
 
-                        <Card className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-orange-50 text-orange-600">
-                                    <RefreshCcw className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Total Refunded</p>
-                                    <p className="text-xl font-bold text-orange-600">
-                                        {formatCurrency(financials?.total_refunded)}
-                                    </p>
-                                </div>
-                            </div>
-                        </Card>
-
+                    {/* Sales & Order Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <Card className="p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                                    <TrendingUp className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Gross Ticket Sales</p>
+                                    <p className="text-xl font-bold text-blue-600">
+                                        {formatCurrency(financials?.gross_ticket_sales)}
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-green-50 text-green-600">
                                     <DollarSign className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Net Revenue</p>
-                                    <p className="text-xl font-bold text-blue-600">
-                                        {formatCurrency(financials?.net_revenue)}
+                                    <p className="text-sm text-gray-500">Total Sales (inc. fees)</p>
+                                    <p className="text-xl font-bold text-green-600">
+                                        {formatCurrency(financials?.total_sales)}
                                     </p>
                                 </div>
                             </div>
@@ -748,6 +760,65 @@ export default function EventFinancialsPage({ params }) {
                                     <p className="text-sm text-gray-500">Tickets Sold</p>
                                     <p className="text-xl font-bold text-indigo-600">
                                         {financials?.total_tickets_sold || 0}
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Additional Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <Card className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-green-50 text-green-600">
+                                    <Wallet className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Your Payout</p>
+                                    <p className="text-xl font-bold text-green-600">
+                                        {formatCurrency(financials?.organizer_payout)}
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-red-50 text-red-600">
+                                    <Building2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Platform Fees ({financials?.parlomo_fee_percentage || 0}%)</p>
+                                    <p className="text-xl font-bold text-red-600">
+                                        {formatCurrency(financials?.parlomo_fees)}
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
+                                    <Tag className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Discounts Used</p>
+                                    <p className="text-xl font-bold text-amber-600">
+                                        {formatCurrency(financials?.total_discounts)}
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-orange-50 text-orange-600">
+                                    <RefreshCcw className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Total Refunded</p>
+                                    <p className="text-xl font-bold text-orange-600">
+                                        {formatCurrency(financials?.total_refunded)}
                                     </p>
                                 </div>
                             </div>
@@ -1108,29 +1179,24 @@ export default function EventFinancialsPage({ params }) {
                     <Card className="bg-blue-50 border-blue-200">
                         <div className="p-4">
                             <h3 className="font-semibold text-blue-900 mb-3">Settlement Amount</h3>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="text-gray-600">Total Sales:</span>
-                                    <p className="font-medium text-gray-900">{formatCurrency(financials?.total_sales)}</p>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between py-1">
+                                    <span className="text-gray-600">Total Sales (inc. fees):</span>
+                                    <span className="font-medium text-gray-900">{formatCurrency(financials?.total_sales)}</span>
                                 </div>
-                                <div>
-                                    <span className="text-gray-600">Processing Fees:</span>
-                                    <p className="font-medium text-red-600">-{formatCurrency(financials?.processing_fees || 0)}</p>
+                                <div className="flex justify-between py-1">
+                                    <span className="text-gray-600">Platform Fee ({financials?.parlomo_fee_percentage || 0}%):</span>
+                                    <span className="font-medium text-red-600">-{formatCurrency(financials?.parlomo_fees)}</span>
                                 </div>
-                                <div>
-                                    <span className="text-gray-600">Total Refunds:</span>
-                                    <p className="font-medium text-red-600">-{formatCurrency(financials?.total_refunded)}</p>
-                                </div>
-                                {/* Platform fee deduction when organizer pays */}
-                                {financials?.fee_paid_by === 'organizer' && financials?.parlomo_fee > 0 && (
-                                    <div>
-                                        <span className="text-gray-600">Platform Fee ({financials?.parlomo_fee_percentage}%):</span>
-                                        <p className="font-medium text-red-600">-{formatCurrency(financials?.parlomo_fee)}</p>
+                                {(financials?.total_refunded > 0) && (
+                                    <div className="flex justify-between py-1">
+                                        <span className="text-gray-600">Total Refunds:</span>
+                                        <span className="font-medium text-red-600">-{formatCurrency(financials?.total_refunded)}</span>
                                     </div>
                                 )}
-                                <div>
-                                    <span className="text-gray-600 font-semibold">Net Settlement:</span>
-                                    <p className="text-2xl font-bold text-green-600">{formatCurrency(financials?.net_revenue)}</p>
+                                <div className="flex justify-between pt-3 mt-2 border-t border-blue-200">
+                                    <span className="text-blue-900 font-semibold">Your Settlement:</span>
+                                    <span className="text-2xl font-bold text-green-600">{formatCurrency(financials?.organizer_payout)}</span>
                                 </div>
                             </div>
                         </div>
@@ -1142,7 +1208,6 @@ export default function EventFinancialsPage({ params }) {
                         <div className="space-y-2">
                             {[
                                 { value: 'bank_transfer', label: 'Bank Transfer', desc: 'Receive payment directly to your bank account' },
-                                { value: 'paypal', label: 'PayPal', desc: 'Receive payment to your PayPal account' },
                                 { value: 'stripe', label: 'Stripe', desc: 'Receive payment via Stripe (1-3 business days)' }
                             ].map((method) => (
                                 <label
