@@ -15,11 +15,21 @@ import {
     setCheckoutStep,
     resetTicketing,
     setTicketTypes,
+    // Seating Actions
+    setSelectedSeats,
+    addSelectedSeat,
+    removeSelectedSeat,
+    clearSelectedSeats,
+    setSeatingConfig,
+    setIsSeatedEvent,
+    setSeatingError,
+    clearSeatingState,
     // Async Thunks
     fetchEventTicketing,
     validatePromoCode,
     startCheckout,
     completeCheckout,
+    fetchSeatingConfig,
     // Selectors
     selectTicketTypes,
     selectCart,
@@ -37,6 +47,14 @@ import {
     selectCurrentEventId,
     selectServiceCharges,
     selectTaxRate,
+    // Seating Selectors
+    selectSelectedSeats,
+    selectSeatingConfig,
+    selectIsSeatedEvent,
+    selectSeatingLoading,
+    selectSeatingError,
+    selectSelectedSeatsCount,
+    selectSelectedSeatsTotal,
 } from '@/features/ticketing/ticketingSlice';
 
 /**
@@ -62,6 +80,15 @@ export function useTicketing() {
     const currentEventId = useSelector(selectCurrentEventId);
     const serviceCharges = useSelector(selectServiceCharges);
     const taxRate = useSelector(selectTaxRate);
+
+    // Seating Selectors
+    const selectedSeats = useSelector(selectSelectedSeats);
+    const seatingConfig = useSelector(selectSeatingConfig);
+    const isSeatedEvent = useSelector(selectIsSeatedEvent);
+    const seatingLoading = useSelector(selectSeatingLoading);
+    const seatingError = useSelector(selectSeatingError);
+    const selectedSeatsCount = useSelector(selectSelectedSeatsCount);
+    const selectedSeatsTotal = useSelector(selectSelectedSeatsTotal);
 
     // Actions
     const handleAddToCart = (ticketTypeId, quantity) => {
@@ -109,12 +136,45 @@ export function useTicketing() {
         return dispatch(validatePromoCode({ eventId, code, cartItems }));
     };
 
-    const handleStartCheckout = (eventId, cartItems, promoCode) => {
-        return dispatch(startCheckout({ eventId, cartItems, promoCode }));
+    const handleStartCheckout = (eventId, cartItems, promoCode, selectedSeats = null) => {
+        return dispatch(startCheckout({ eventId, cartItems, promoCode, selectedSeats }));
     };
 
     const handleCompleteCheckout = (checkoutData) => {
         return dispatch(completeCheckout(checkoutData));
+    };
+
+    // Seating Actions
+    const handleSetSelectedSeats = (seats) => {
+        dispatch(setSelectedSeats(seats));
+    };
+
+    const handleAddSelectedSeat = (seat) => {
+        dispatch(addSelectedSeat(seat));
+    };
+
+    const handleRemoveSelectedSeat = (seatLabel) => {
+        dispatch(removeSelectedSeat(seatLabel));
+    };
+
+    const handleClearSelectedSeats = () => {
+        dispatch(clearSelectedSeats());
+    };
+
+    const handleSetSeatingConfig = (config) => {
+        dispatch(setSeatingConfig(config));
+    };
+
+    const handleSetIsSeatedEvent = (isSeated) => {
+        dispatch(setIsSeatedEvent(isSeated));
+    };
+
+    const handleClearSeatingState = () => {
+        dispatch(clearSeatingState());
+    };
+
+    const handleFetchSeatingConfig = (eventId) => {
+        return dispatch(fetchSeatingConfig(eventId));
     };
 
     return {
@@ -135,6 +195,14 @@ export function useTicketing() {
         currentEventId,
         serviceCharges,
         taxRate,
+        // Seating State
+        selectedSeats,
+        seatingConfig,
+        isSeatedEvent,
+        seatingLoading,
+        seatingError,
+        selectedSeatsCount,
+        selectedSeatsTotal,
         // Actions
         addToCart: handleAddToCart,
         updateQuantity: handleUpdateQuantity,
@@ -145,6 +213,15 @@ export function useTicketing() {
         setCheckoutStep: handleSetCheckoutStep,
         resetTicketing: handleResetTicketing,
         setTicketTypes: handleSetTicketTypes,
+        // Seating Actions
+        setSelectedSeats: handleSetSelectedSeats,
+        addSelectedSeat: handleAddSelectedSeat,
+        removeSelectedSeat: handleRemoveSelectedSeat,
+        clearSelectedSeats: handleClearSelectedSeats,
+        setSeatingConfig: handleSetSeatingConfig,
+        setIsSeatedEvent: handleSetIsSeatedEvent,
+        clearSeatingState: handleClearSeatingState,
+        fetchSeatingConfig: handleFetchSeatingConfig,
         // Async actions
         fetchEventTicketing: handleFetchEventTicketing,
         validatePromoCode: handleValidatePromoCode,
@@ -201,5 +278,38 @@ export function usePromoCode() {
                     quantity: item.quantity,
                 })),
             })),
+    };
+}
+
+/**
+ * Hook for seating-specific operations
+ */
+export function useSeating() {
+    const dispatch = useDispatch();
+    const selectedSeats = useSelector(selectSelectedSeats);
+    const seatingConfig = useSelector(selectSeatingConfig);
+    const isSeatedEvent = useSelector(selectIsSeatedEvent);
+    const seatingLoading = useSelector(selectSeatingLoading);
+    const seatingError = useSelector(selectSeatingError);
+    const selectedSeatsCount = useSelector(selectSelectedSeatsCount);
+    const selectedSeatsTotal = useSelector(selectSelectedSeatsTotal);
+
+    return {
+        selectedSeats,
+        seatingConfig,
+        isSeatedEvent,
+        seatingLoading,
+        seatingError,
+        selectedSeatsCount,
+        selectedSeatsTotal,
+        isEmpty: selectedSeats.length === 0,
+        setSelectedSeats: (seats) => dispatch(setSelectedSeats(seats)),
+        addSelectedSeat: (seat) => dispatch(addSelectedSeat(seat)),
+        removeSelectedSeat: (label) => dispatch(removeSelectedSeat(label)),
+        clearSelectedSeats: () => dispatch(clearSelectedSeats()),
+        setSeatingConfig: (config) => dispatch(setSeatingConfig(config)),
+        setIsSeatedEvent: (isSeated) => dispatch(setIsSeatedEvent(isSeated)),
+        clearSeatingState: () => dispatch(clearSeatingState()),
+        fetchSeatingConfig: (eventId) => dispatch(fetchSeatingConfig(eventId)),
     };
 }

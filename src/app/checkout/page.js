@@ -425,6 +425,25 @@ export default function CheckoutPage() {
                                     Order Summary
                                 </h2>
 
+                                {/* Selected Seats (for seated events) */}
+                                {checkoutSession.isSeated && checkoutSession.selectedSeats && checkoutSession.selectedSeats.length > 0 && (
+                                    <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                                        <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                            <span>Selected Seats</span>
+                                            <span className="bg-blue-200 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                                                {checkoutSession.selectedSeats.length}
+                                            </span>
+                                        </h4>
+                                        <div className="text-xs text-blue-700 space-y-1 max-h-32 overflow-y-auto">
+                                            {checkoutSession.selectedSeats.map((seatLabel) => (
+                                                <div key={seatLabel} className="bg-white/50 px-2 py-1 rounded">
+                                                    {seatLabel}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Cart Items from Session */}
                                 <div className="space-y-3 mb-4">
                                     {checkoutSession.cartItems?.map((item) => (
@@ -434,7 +453,11 @@ export default function CheckoutPage() {
                                                     {item.ticketTypeName}
                                                 </div>
                                                 <div className="text-gray-500">
-                                                    Qty: {item.quantity}
+                                                    {checkoutSession.isSeated ? (
+                                                        <span>{item.quantity} {item.quantity === 1 ? 'seat' : 'seats'}</span>
+                                                    ) : (
+                                                        <span>Qty: {item.quantity}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="font-semibold text-gray-900">

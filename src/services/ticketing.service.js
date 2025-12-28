@@ -103,9 +103,10 @@ const ticketingService = {
      * @param {string} params.eventId - Event ID
      * @param {Array} params.cartItems - Cart items with ticketTypeId and quantity
      * @param {string} params.promoCode - Promo code (optional)
+     * @param {string[]} params.selectedSeats - Selected seat labels for seated events (optional)
      * @returns {Promise} Checkout session
      */
-    async startCheckout({ eventId, cartItems, promoCode }) {
+    async startCheckout({ eventId, cartItems, promoCode, selectedSeats }) {
         // Build FormData with the expected format
         const formData = new FormData();
         formData.append('event_id', eventId);
@@ -120,6 +121,13 @@ const ticketingService = {
             cartItems.forEach((item, index) => {
                 formData.append(`cart_items[${index}][ticket_type_id]`, item.ticketTypeId);
                 formData.append(`cart_items[${index}][quantity]`, String(item.quantity));
+            });
+        }
+
+        // Add selected seats for seated events
+        if (selectedSeats && Array.isArray(selectedSeats) && selectedSeats.length > 0) {
+            selectedSeats.forEach((seatLabel, index) => {
+                formData.append(`selected_seats[${index}]`, seatLabel);
             });
         }
 

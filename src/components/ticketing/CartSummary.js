@@ -6,9 +6,9 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useCart, usePromoCode } from '@/hooks/useTicketing';
+import { useCart, usePromoCode, useSeating } from '@/hooks/useTicketing';
 import { Button } from '@/components/common/Button';
-import { ShoppingCart, Trash2, Tag, X, Loader2, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Trash2, Tag, X, Loader2, CheckCircle, Armchair } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
@@ -73,10 +73,23 @@ export default function CartSummary({ onCheckout, serviceCharges = [], taxRate =
         clearPromoCode,
         validatePromoCode
     } = usePromoCode();
+    const {
+        selectedSeats,
+        isSeatedEvent,
+        selectedSeatsCount,
+        selectedSeatsTotal,
+        removeSelectedSeat,
+        clearSelectedSeats,
+    } = useSeating();
 
     const [promoInput, setPromoInput] = useState('');
     const [validating, setValidating] = useState(false);
     const [promoMessage, setPromoMessage] = useState('');
+
+    // Determine if we're showing seats or regular cart
+    const isShowingSeats = isSeatedEvent && selectedSeats.length > 0;
+    const displayCount = isShowingSeats ? selectedSeatsCount : cartCount;
+    const isEmpty = isShowingSeats ? selectedSeats.length === 0 : cart.length === 0;
 
     const handleApplyPromo = async () => {
         if (!promoInput.trim()) return;
@@ -107,7 +120,17 @@ export default function CartSummary({ onCheckout, serviceCharges = [], taxRate =
         toast.info('Promo code removed');
     };
 
-    const subtotal = cartTotal;
+    const handleClear = () => {
+        if (isShowingSeats) {
+            clearSelectedSeats();
+        } else {
+            clearCart();
+        }
+    };
+
+    // Calculate subtotal based on whether showing seats or cart
+    // Note: selectedSeatsTotal is in currency units (e.g., pounds), cartTotal is in cents
+    const subtotal = isShowingSeats ? (selectedSeatsTotal * 100) : cartTotal;
     const discount = promoDiscount;
 
     // Calculate the discounted subtotal (subtotal after promo discount)
@@ -115,13 +138,13 @@ export default function CartSummary({ onCheckout, serviceCharges = [], taxRate =
 
     // Calculate fees based on service charges and tax rate using DISCOUNTED subtotal
     const { fees, totalFees, tax } = useMemo(
-        () => calculateFees(serviceCharges, taxRate, discountedSubtotal, cartCount),
-        [serviceCharges, taxRate, discountedSubtotal, cartCount]
+        () => calculateFees(serviceCharges, taxRate, discountedSubtotal, displayCount),
+        [serviceCharges, taxRate, discountedSubtotal, displayCount]
     );
 
     const total = discountedSubtotal + totalFees + tax;
 
-    if (cart.length === 0) {
+    if (isEmpty) {
         return (
             <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                 <div className="text-center py-8">
@@ -143,47 +166,94 @@ export default function CartSummary({ onCheckout, serviceCharges = [], taxRate =
             <div className="bg-gradient-to-r from-primary to-primary-600 text-white p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <ShoppingCart className="w-5 h-5" />
-                        <h3 className="font-bold text-lg">Your Cart</h3>
+                        {isShowingSeats ? (
+                            <Armchair className="w-5 h-5" />
+                        ) : (
+                            <ShoppingCart className="w-5 h-5" />
+                        )}
+                        <h3 className="font-bold text-lg">
+                            {isShowingSeats ? 'Your Seats' : 'Your Cart'}
+                        </h3>
                     </div>
                     <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold">
-                        {cartCount} {cartCount === 1 ? 'ticket' : 'tickets'}
+                        {displayCount} {displayCount === 1 ? (isShowingSeats ? 'seat' : 'ticket') : (isShowingSeats ? 'seats' : 'tickets')}
                     </div>
                 </div>
             </div>
 
             <div className="p-4 space-y-4">
-                {/* Cart Items */}
+                {/* Cart/Seats Items */}
                 <div className="space-y-3">
-                    {cart.map((item) => (
-                        <div
-                            key={item.ticketTypeId}
-                            className="flex items-start justify-between gap-3 p-3 bg-gray-50 rounded-lg"
-                        >
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 text-sm mb-1">
-                                    {item.ticketTypeName}
+                    {isShowingSeats ? (
+                        // Render selected seats grouped by ticket type
+                        Object.entries(
+                            selectedSeats.reduce((groups, seat) => {
+                                const key = seat.ticketTypeName || seat.category;
+                                if (!groups[key]) {
+                                    groups[key] = { seats: [], price: seat.price };
+                                }
+                                groups[key].seats.push(seat);
+                                return groups;
+                            }, {})
+                        ).map(([typeName, group]) => (
+                            <div
+                                key={typeName}
+                                className="p-3 bg-gray-50 rounded-lg"
+                            >
+                                <h4 className="font-semibold text-gray-900 text-sm mb-2">
+                                    {typeName} ({group.seats.length})
                                 </h4>
-                                <div className="text-xs text-gray-600">
-                                    {item.quantity} × £{(item.unitPrice / 100).toFixed(2)}
+                                <div className="text-xs text-gray-600 space-y-1">
+                                    {group.seats.map(seat => (
+                                        <div key={seat.label} className="flex justify-between items-center">
+                                            <span>{seat.label}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>£{seat.price?.toFixed(2)}</span>
+                                                <button
+                                                    onClick={() => removeSelectedSeat(seat.label)}
+                                                    className="p-0.5 text-gray-400 hover:text-red-500 rounded"
+                                                    aria-label={`Remove seat ${seat.label}`}
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <div className="font-bold text-gray-900">
-                                    £{(item.subtotal / 100).toFixed(2)}
+                        ))
+                    ) : (
+                        // Render regular cart items
+                        cart.map((item) => (
+                            <div
+                                key={item.ticketTypeId}
+                                className="flex items-start justify-between gap-3 p-3 bg-gray-50 rounded-lg"
+                            >
+                                <div className="flex-1">
+                                    <h4 className="font-semibold text-gray-900 text-sm mb-1">
+                                        {item.ticketTypeName}
+                                    </h4>
+                                    <div className="text-xs text-gray-600">
+                                        {item.quantity} × £{(item.unitPrice / 100).toFixed(2)}
+                                    </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeFromCart(item.ticketTypeId)}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto px-2 py-1 text-xs mt-1 gap-1"
-                                >
-                                    <Trash2 className="w-3 h-3" />
-                                    Remove
-                                </Button>
+                                <div className="text-right">
+                                    <div className="font-bold text-gray-900">
+                                        £{(item.subtotal / 100).toFixed(2)}
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeFromCart(item.ticketTypeId)}
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto px-2 py-1 text-xs mt-1 gap-1"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                        Remove
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
 
                 {/* Promo Code */}
@@ -306,10 +376,10 @@ export default function CartSummary({ onCheckout, serviceCharges = [], taxRate =
                         variant="ghost"
                         fullWidth
                         size="sm"
-                        onClick={clearCart}
+                        onClick={handleClear}
                         className="text-gray-600 hover:text-gray-800"
                     >
-                        Clear Cart
+                        {isShowingSeats ? 'Clear Selection' : 'Clear Cart'}
                     </Button>
                 </div>
             </div>

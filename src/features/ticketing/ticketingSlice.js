@@ -5,6 +5,7 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import ticketingService from '@/services/ticketing.service';
+import seatingService from '@/services/seating.service';
 
 // ==================== ASYNC THUNKS ====================
 
@@ -41,11 +42,26 @@ export const validatePromoCode = createAsyncThunk(
  */
 export const startCheckout = createAsyncThunk(
     'ticketing/startCheckout',
-    async ({ eventId, cartItems, promoCode }, { rejectWithValue }) => {
+    async ({ eventId, cartItems, promoCode, selectedSeats }, { rejectWithValue }) => {
         try {
-            return await ticketingService.startCheckout({ eventId, cartItems, promoCode });
+            return await ticketingService.startCheckout({ eventId, cartItems, promoCode, selectedSeats });
         } catch (error) {
             return rejectWithValue(error.response?.data || { error: 'Failed to start checkout' });
+        }
+    }
+);
+
+/**
+ * Fetch seating configuration for an event
+ */
+export const fetchSeatingConfig = createAsyncThunk(
+    'ticketing/fetchSeatingConfig',
+    async (eventId, { rejectWithValue }) => {
+        try {
+            const response = await seatingService.getSeatingConfig(eventId);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: 'Failed to fetch seating config' });
         }
     }
 );
@@ -92,6 +108,13 @@ const initialState = {
 
     // Checkout flow state
     checkoutStep: 'cart', // 'cart' | 'details' | 'payment' | 'complete'
+
+    // Seating state (for seated events)
+    selectedSeats: [],      // Array of SelectedSeat objects
+    seatingConfig: null,    // SeatingConfig from API
+    isSeatedEvent: false,   // Whether current event is seated
+    seatingLoading: false,  // Loading state for seating config
+    seatingError: null,     // Seating-specific errors
 };
 
 // ==================== SLICE ====================
@@ -239,6 +262,75 @@ const ticketingSlice = createSlice({
             state.serviceCharges = serviceCharges || [];
             state.taxRate = taxRate || 0;
         },
+
+        // ==================== SEATING REDUCERS ====================
+
+        /**
+         * Set selected seats (replaces entire array)
+         */
+        setSelectedSeats: (state, action) => {
+            state.selectedSeats = action.payload;
+        },
+
+        /**
+         * Add a selected seat
+         */
+        addSelectedSeat: (state, action) => {
+            // Prevent duplicates
+            const exists = state.selectedSeats.some(seat => seat.label === action.payload.label);
+            if (!exists) {
+                state.selectedSeats.push(action.payload);
+            }
+        },
+
+        /**
+         * Remove a selected seat by label
+         */
+        removeSelectedSeat: (state, action) => {
+            state.selectedSeats = state.selectedSeats.filter(
+                seat => seat.label !== action.payload
+            );
+        },
+
+        /**
+         * Clear all selected seats
+         */
+        clearSelectedSeats: (state) => {
+            state.selectedSeats = [];
+        },
+
+        /**
+         * Set seating configuration
+         */
+        setSeatingConfig: (state, action) => {
+            state.seatingConfig = action.payload;
+            state.isSeatedEvent = !!action.payload;
+        },
+
+        /**
+         * Set seated event flag
+         */
+        setIsSeatedEvent: (state, action) => {
+            state.isSeatedEvent = action.payload;
+        },
+
+        /**
+         * Set seating error
+         */
+        setSeatingError: (state, action) => {
+            state.seatingError = action.payload;
+        },
+
+        /**
+         * Clear all seating state
+         */
+        clearSeatingState: (state) => {
+            state.selectedSeats = [];
+            state.seatingConfig = null;
+            state.isSeatedEvent = false;
+            state.seatingError = null;
+            state.seatingLoading = false;
+        },
     },
     extraReducers: (builder) => {
         // Fetch Event Ticketing
@@ -325,12 +417,33 @@ const ticketingSlice = createSlice({
                     expiresAt: sessionData.expires_at,
                     timeRemainingSeconds: sessionData.time_remaining_seconds,
                     isActive: sessionData.is_active,
+                    // Seating data
+                    isSeated: sessionData.is_seated || false,
+                    selectedSeats: sessionData.selected_seats || null,
+                    seatHold: sessionData.seat_hold || null,  // Full object with id, status, expires_at
                 };
                 state.checkoutStep = 'details';
             })
             .addCase(startCheckout.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload?.message || action.payload?.error || 'Failed to start checkout';
+            });
+
+        // Fetch Seating Config
+        builder
+            .addCase(fetchSeatingConfig.pending, (state) => {
+                state.seatingLoading = true;
+                state.seatingError = null;
+            })
+            .addCase(fetchSeatingConfig.fulfilled, (state, action) => {
+                state.seatingLoading = false;
+                state.seatingConfig = action.payload;
+                state.isSeatedEvent = true;
+            })
+            .addCase(fetchSeatingConfig.rejected, (state, action) => {
+                state.seatingLoading = false;
+                state.seatingError = action.payload?.message || action.payload?.error || 'Failed to fetch seating config';
+                state.isSeatedEvent = false;
             });
 
         // Complete Checkout
@@ -363,6 +476,15 @@ export const {
     setCheckoutStep,
     resetTicketing,
     setTicketTypes,
+    // Seating actions
+    setSelectedSeats,
+    addSelectedSeat,
+    removeSelectedSeat,
+    clearSelectedSeats,
+    setSeatingConfig,
+    setIsSeatedEvent,
+    setSeatingError,
+    clearSeatingState,
 } = ticketingSlice.actions;
 
 // Selectors
@@ -387,5 +509,15 @@ export const selectFinalTotal = (state) => {
     const session = state.ticketing.checkoutSession;
     return session ? session.total : state.ticketing.cartTotal;
 };
+
+// Seating Selectors
+export const selectSelectedSeats = (state) => state.ticketing.selectedSeats;
+export const selectSeatingConfig = (state) => state.ticketing.seatingConfig;
+export const selectIsSeatedEvent = (state) => state.ticketing.isSeatedEvent;
+export const selectSeatingLoading = (state) => state.ticketing.seatingLoading;
+export const selectSeatingError = (state) => state.ticketing.seatingError;
+export const selectSelectedSeatsCount = (state) => state.ticketing.selectedSeats.length;
+export const selectSelectedSeatsTotal = (state) =>
+    state.ticketing.selectedSeats.reduce((sum, seat) => sum + (seat.price || 0), 0);
 
 export default ticketingSlice.reducer;

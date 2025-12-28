@@ -6,12 +6,14 @@ import { FrontLayout } from "@/components/layout/FrontLayout";
 import { formatEventDateRange, getEventStatusColor } from "@/types/public-events-types";
 import { Button } from "@/components/common/Button";
 import { MapDisplay } from "@/components/common/map/LazyMapDisplay";
-import { Calendar, MapPin, Clock, Globe, Share2, Ticket, Mail, PlayCircle, DoorOpen, CalendarClock, Users, Check, Navigation, Phone, Facebook, Instagram, MessageCircle } from "lucide-react";
+import { Calendar, MapPin, Clock, Globe, Share2, Ticket, Mail, PlayCircle, DoorOpen, CalendarClock, Users, Check, Navigation, Phone, Facebook, Instagram, MessageCircle, Armchair } from "lucide-react";
 import { useTicketing } from "@/hooks/useTicketing";
 import TicketTypeCard from "@/components/ticketing/TicketTypeCard";
 import CartSummary from "@/components/ticketing/CartSummary";
+import SeatingChart from "@/components/ticketing/SeatingChart";
 import publicEventsService from "@/services/public-events.service";
 import { normalizeEventData } from "@/features/public-events/publicEventsSlice";
+import { toast } from "sonner";
 
 export default function PublicEventPage() {
     const router = useRouter();
@@ -34,7 +36,22 @@ export default function PublicEventPage() {
         currentEventId,
         promoCode,
         loading: checkoutLoading,
+        // Seating state
+        selectedSeats,
+        selectedSeatsCount,
+        setIsSeatedEvent,
+        clearSelectedSeats,
     } = useTicketing();
+
+    // Determine if event is seated
+    const isSeatedEvent = event?.eventType === 'seated';
+
+    // Set seated event flag when event data is loaded
+    useEffect(() => {
+        if (event) {
+            setIsSeatedEvent(event.eventType === 'seated');
+        }
+    }, [event, setIsSeatedEvent]);
 
     // Fetch event data
     useEffect(() => {
@@ -102,27 +119,79 @@ export default function PublicEventPage() {
     };
 
     const handleProceedToCheckout = async () => {
-        if (cartCount > 0 && currentEventId) {
-            try {
-                // Build cart items for the API
-                const cartItems = cart.map(item => ({
-                    ticketTypeId: item.ticketTypeId,
-                    quantity: item.quantity,
-                }));
+        // Handle seated event checkout
+        if (isSeatedEvent) {
+            if (selectedSeatsCount === 0) {
+                toast.error("Please select at least one seat");
+                return;
+            }
 
-                // Start checkout session
-                const result = await startCheckout(currentEventId, cartItems, promoCode);
+            try {
+                // Build cart items from selected seats (grouped by ticket type)
+                const cartItemsMap = new Map();
+                selectedSeats.forEach(seat => {
+                    const current = cartItemsMap.get(seat.ticketTypeId) || 0;
+                    cartItemsMap.set(seat.ticketTypeId, current + 1);
+                });
+
+                const cartItems = Array.from(cartItemsMap.entries()).map(
+                    ([ticketTypeId, quantity]) => ({
+                        ticketTypeId,
+                        quantity,
+                    })
+                );
+
+                // Start checkout session with selected seats
+                const result = await startCheckout(
+                    currentEventId,
+                    cartItems,
+                    promoCode,
+                    selectedSeats.map(s => s.label)
+                );
 
                 // Navigate to checkout if session was created successfully
                 if (result.payload?.data || result.payload?.session) {
                     router.push("/checkout");
                 } else if (result.error) {
                     console.error("Failed to start checkout:", result.error);
-                    alert(result.payload?.message || "Failed to start checkout. Please try again.");
+                    // Check for seat conflict error
+                    const errorMessage = result.payload?.message || "Failed to start checkout. Please try again.";
+                    if (errorMessage.toLowerCase().includes("no longer available") ||
+                        errorMessage.toLowerCase().includes("seat")) {
+                        toast.error("Some seats are no longer available. Please select again.");
+                        clearSelectedSeats();
+                    } else {
+                        toast.error(errorMessage);
+                    }
                 }
             } catch (err) {
                 console.error("Checkout error:", err);
-                alert("Failed to start checkout. Please try again.");
+                toast.error("Failed to start checkout. Please try again.");
+            }
+        } else {
+            // Handle general admission checkout
+            if (cartCount > 0 && currentEventId) {
+                try {
+                    // Build cart items for the API
+                    const cartItems = cart.map(item => ({
+                        ticketTypeId: item.ticketTypeId,
+                        quantity: item.quantity,
+                    }));
+
+                    // Start checkout session
+                    const result = await startCheckout(currentEventId, cartItems, promoCode);
+
+                    // Navigate to checkout if session was created successfully
+                    if (result.payload?.data || result.payload?.session) {
+                        router.push("/checkout");
+                    } else if (result.error) {
+                        console.error("Failed to start checkout:", result.error);
+                        toast.error(result.payload?.message || "Failed to start checkout. Please try again.");
+                    }
+                } catch (err) {
+                    console.error("Checkout error:", err);
+                    toast.error("Failed to start checkout. Please try again.");
+                }
             }
         }
     };
@@ -345,7 +414,9 @@ export default function PublicEventPage() {
 
                             {/* 3. Tickets Section */}
                             <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
-                                <h2 className="text-2xl font-bold mb-6 text-gray-900">Tickets</h2>
+                                <h2 className="text-2xl font-bold mb-6 text-gray-900">
+                                    {isSeatedEvent ? "Select Your Seats" : "Tickets"}
+                                </h2>
 
                                 {/* Check if event is bookable */}
                                 {["cancelled", "postponed", "archived", "completed"].includes(
@@ -390,7 +461,20 @@ export default function PublicEventPage() {
                                             Check back later for ticket availability
                                         </p>
                                     </div>
+                                ) : isSeatedEvent ? (
+                                    // Seated event - show seating chart
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                                            <Armchair className="w-4 h-4" />
+                                            <span>Select your seats from the seating chart below</span>
+                                        </div>
+                                        <SeatingChart
+                                            eventId={event.id}
+                                            currency={event.currency || "GBP"}
+                                        />
+                                    </div>
                                 ) : (
+                                    // General admission - show ticket type cards
                                     <div className="space-y-4">
                                         {ticketTypes.map((ticketType) => (
                                             <TicketTypeCard

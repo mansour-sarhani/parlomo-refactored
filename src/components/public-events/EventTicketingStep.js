@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Info, Plus, Pencil, Trash2 } from "lucide-react";
+import { Info, Plus, Pencil, Trash2, Armchair, ExternalLink } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { ServiceChargeModal } from "./ServiceChargeModal";
 import { CURRENCIES } from "@/types/public-events-types";
+import Link from "next/link";
 
-export function EventTicketingStep({ formData, errors, onChange }) {
+export function EventTicketingStep({ formData, errors, onChange, mode = "create", eventId = null }) {
     const [isServiceChargeModalOpen, setIsServiceChargeModalOpen] = useState(false);
     const [editingChargeIndex, setEditingChargeIndex] = useState(null);
 
@@ -76,26 +77,69 @@ export function EventTicketingStep({ formData, errors, onChange }) {
 
                     <button
                         type="button"
-                        disabled
-                        className="p-4 rounded border text-left opacity-50 cursor-not-allowed"
+                        onClick={() => onChange("eventType", "seated")}
+                        className={`p-4 rounded border text-left transition-colors ${formData.eventType === "seated"
+                            ? "border-primary ring-1 ring-primary"
+                            : "border-gray-200 hover:border-gray-300"
+                            }`}
                         style={{
-                            borderColor: "var(--color-border)",
-                            backgroundColor: "var(--color-surface-secondary)",
+                            borderColor: formData.eventType === "seated" ? "var(--color-primary)" : "var(--color-border)",
+                            backgroundColor: formData.eventType === "seated" ? "var(--color-surface-secondary)" : "var(--color-surface-primary)",
                         }}
                     >
-                        <div className="font-semibold mb-1 flex items-center gap-2" style={{ color: "var(--color-text-primary)" }}>
+                        <div className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>
                             Assigned Seating
-                            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-warning-light)", color: "var(--color-warning)" }}>
-                                Coming Soon
-                            </span>
                         </div>
                         <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                            Attendees choose specific seats from a seating chart. Available in Phase 3.
+                            Attendees choose specific seats from a seating chart powered by seats.io.
                         </p>
                     </button>
                 </div>
                 {errors.eventType && <p className="text-sm mt-1" style={{ color: "var(--color-error)" }}>{errors.eventType}</p>}
             </div>
+
+            {/* Seated Event Info Notice */}
+            {formData.eventType === "seated" && (
+                <div
+                    className="flex items-start gap-3 p-4 rounded-lg border"
+                    style={{
+                        backgroundColor: "var(--color-info-light, #eff6ff)",
+                        borderColor: "var(--color-info, #3b82f6)",
+                    }}
+                >
+                    <Armchair className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-info, #3b82f6)" }} />
+                    <div className="flex-1">
+                        <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                            Seating Chart Configuration
+                        </p>
+                        {mode === "edit" && eventId ? (
+                            <>
+                                <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                                    Configure the seating chart and map seat categories to ticket types. The seating chart is powered by seats.io.
+                                </p>
+                                <Link
+                                    href={`/panel/my-events/${eventId}/seating`}
+                                    className="inline-flex items-center gap-1 text-xs font-medium mt-2 hover:underline"
+                                    style={{ color: "var(--color-info, #3b82f6)" }}
+                                >
+                                    <ExternalLink className="w-3 h-3" />
+                                    Configure Seating Chart
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                                    After creating your event, you'll be able to configure the seating chart and map seat categories to ticket types.
+                                    The seating chart will be powered by seats.io, allowing attendees to select their preferred seats during checkout.
+                                </p>
+                                <p className="text-xs mt-2" style={{ color: "var(--color-text-tertiary)" }}>
+                                    Note: Ticket types you create will be linked to seating categories in the chart configuration step.
+                                </p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Currency Info */}
             <div

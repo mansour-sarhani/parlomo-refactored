@@ -51,6 +51,7 @@ import {
     Image,
     Shield,
     Settings,
+    Armchair,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatEventDateRange, getEventStatusColor } from "@/types/public-events-types";
@@ -735,6 +736,18 @@ export default function ViewEventPage({ params }) {
                             >
                                 Manage Tickets
                             </Button>
+                            {event.eventType === "seated" && (
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() =>
+                                        router.push(`/panel/my-events/${event.id}/seating`)
+                                    }
+                                    icon={<Armchair className="w-4 h-4" />}
+                                >
+                                    Configure Seating
+                                </Button>
+                            )}
                             <Button
                                 variant="outline"
                                 className="w-full justify-start"

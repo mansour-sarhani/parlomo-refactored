@@ -448,6 +448,7 @@ export function EventForm({ initialData = null, mode = "create", organizerId }) 
                     onMultipleChange={handleMultipleFieldsChange}
                     isAdmin={isAdmin}
                     mode={mode}
+                    eventId={initialData?.id}
                     organizers={organizers}
                     organizersLoading={organizersLoading}
                 />
