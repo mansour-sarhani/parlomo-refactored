@@ -27,6 +27,7 @@ import {
     Receipt,
     DollarSign,
     Ticket,
+    MapPin,
 } from "lucide-react";
 
 export const navigation = [
@@ -212,6 +213,14 @@ export const adminNavigation = [
                 },
             },
         ],
+    },
+    {
+        name: "Venue Charts",
+        href: "/panel/admin/seatsio/venue-charts",
+        icon: MapPin,
+        permission: {
+            superAdminOnly: true,
+        },
     },
     {
         name: "Marketplace",
