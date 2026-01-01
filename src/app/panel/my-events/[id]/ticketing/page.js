@@ -12,13 +12,42 @@ import TicketTypeManager from "@/components/ticketing/organizer/TicketTypeManage
 import SalesDashboard from "@/components/ticketing/organizer/SalesDashboard";
 import AttendeeList from "@/components/ticketing/organizer/AttendeeList";
 import PromoCodeManager from "@/components/ticketing/organizer/PromoCodeManager";
-import { Ticket, BarChart3, Users, Tag, ChevronLeft } from "lucide-react";
+import SeatBlockingManager from "@/components/ticketing/SeatBlockingManager";
+import publicEventsService from "@/services/public-events.service";
+import { Ticket, BarChart3, Users, Tag, ChevronLeft, Lock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function EventTicketingManagementPage() {
     const params = useParams();
     const router = useRouter();
     const eventId = params.id;
     const [activeTab, setActiveTab] = useState("tickets");
+    const [event, setEvent] = useState(null);
+    const [loadingEvent, setLoadingEvent] = useState(true);
+
+    // Fetch event data to check if it's seated
+    useEffect(() => {
+        if (eventId) {
+            fetchEventData();
+        }
+    }, [eventId]);
+
+    const fetchEventData = async () => {
+        try {
+            setLoadingEvent(true);
+            const response = await publicEventsService.getEventById(eventId);
+            if (response.success) {
+                setEvent(response.data);
+            }
+        } catch (err) {
+            console.error('Error fetching event:', err);
+        } finally {
+            setLoadingEvent(false);
+        }
+    };
+
+    // Check if event is seated
+    const isSeatedEvent = event?.eventType === 'seated' || event?.event_type === 'seated';
 
     return (
         <div className="p-6">
@@ -76,14 +105,35 @@ export default function EventTicketingManagementPage() {
                             <Tag className="w-5 h-5" />
                             Promo Codes
                         </Button>
+                        {isSeatedEvent && (
+                            <Button
+                                onClick={() => setActiveTab("blocked-seats")}
+                                variant={activeTab === "blocked-seats" ? "primary" : "ghost"}
+                                className="gap-2 whitespace-nowrap"
+                            >
+                                <Lock className="w-5 h-5" />
+                                Blocked Seats
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 <div className="p-6">
-                    {activeTab === "tickets" && <TicketTypeManager eventId={eventId} />}
-                    {activeTab === "sales" && <SalesDashboard eventId={eventId} />}
-                    {activeTab === "attendees" && <AttendeeList eventId={eventId} />}
-                    {activeTab === "promocodes" && <PromoCodeManager eventId={eventId} />}
+                    {loadingEvent ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        </div>
+                    ) : (
+                        <>
+                            {activeTab === "tickets" && <TicketTypeManager eventId={eventId} />}
+                            {activeTab === "sales" && <SalesDashboard eventId={eventId} />}
+                            {activeTab === "attendees" && <AttendeeList eventId={eventId} />}
+                            {activeTab === "promocodes" && <PromoCodeManager eventId={eventId} />}
+                            {activeTab === "blocked-seats" && isSeatedEvent && (
+                                <SeatBlockingManager eventId={eventId} />
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
         </div>
