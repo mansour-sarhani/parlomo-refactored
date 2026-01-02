@@ -80,6 +80,48 @@ export const completeCheckout = createAsyncThunk(
     }
 );
 
+/**
+ * Issue complimentary tickets
+ */
+export const issueComplimentaryTickets = createAsyncThunk(
+    'ticketing/issueComplimentaryTickets',
+    async ({ eventId, data }, { rejectWithValue }) => {
+        try {
+            return await ticketingService.issueComplimentaryTickets(eventId, data);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: 'Failed to issue complimentary tickets' });
+        }
+    }
+);
+
+/**
+ * Fetch complimentary tickets for an event
+ */
+export const fetchComplimentaryTickets = createAsyncThunk(
+    'ticketing/fetchComplimentaryTickets',
+    async (eventId, { rejectWithValue }) => {
+        try {
+            return await ticketingService.getEventComplimentaryTickets(eventId);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: 'Failed to fetch complimentary tickets' });
+        }
+    }
+);
+
+/**
+ * Fetch complimentary ticket details
+ */
+export const fetchComplimentaryTicketDetails = createAsyncThunk(
+    'ticketing/fetchComplimentaryTicketDetails',
+    async (orderId, { rejectWithValue }) => {
+        try {
+            return await ticketingService.getComplimentaryTicketDetails(orderId);
+        } catch (error) {
+            return rejectWithValue(error.response?.data || { error: 'Failed to fetch complimentary ticket details' });
+        }
+    }
+);
+
 // ==================== INITIAL STATE ====================
 
 const initialState = {
@@ -115,6 +157,12 @@ const initialState = {
     isSeatedEvent: false,   // Whether current event is seated
     seatingLoading: false,  // Loading state for seating config
     seatingError: null,     // Seating-specific errors
+
+    // Complimentary tickets state
+    complimentaryTickets: [],              // Array of ComplimentaryTicketSummary
+    complimentaryTicketsLoading: false,    // Loading state for fetching list
+    complimentaryTicketsError: null,       // Error message
+    selectedComplimentaryTicket: null,     // ComplimentaryTicketOrder details
 };
 
 // ==================== SLICE ====================
@@ -461,6 +509,67 @@ const ticketingSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload?.error || 'Failed to complete checkout';
             });
+
+        // Issue Complimentary Tickets
+        builder
+            .addCase(issueComplimentaryTickets.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(issueComplimentaryTickets.fulfilled, (state, action) => {
+                state.loading = false;
+                // Add new ticket to the beginning of the list if it's loaded
+                if (state.complimentaryTickets.length > 0 || action.payload.data) {
+                    const orderData = action.payload.data?.order || action.payload.order;
+                    const ticketCount = action.payload.data?.ticket_count || action.payload.ticket_count;
+
+                    state.complimentaryTickets.unshift({
+                        id: orderData.id,
+                        order_number: orderData.order_number,
+                        customer_name: orderData.customer_name,
+                        customer_email: orderData.customer_email,
+                        ticket_count: ticketCount,
+                        reason: orderData.reason,
+                        created_at: new Date().toISOString(),
+                    });
+                }
+            })
+            .addCase(issueComplimentaryTickets.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.message || action.payload?.error || 'Failed to issue complimentary tickets';
+            });
+
+        // Fetch Complimentary Tickets
+        builder
+            .addCase(fetchComplimentaryTickets.pending, (state) => {
+                state.complimentaryTicketsLoading = true;
+                state.complimentaryTicketsError = null;
+            })
+            .addCase(fetchComplimentaryTickets.fulfilled, (state, action) => {
+                state.complimentaryTicketsLoading = false;
+                // Handle both wrapped and unwrapped responses
+                state.complimentaryTickets = action.payload.data || action.payload;
+            })
+            .addCase(fetchComplimentaryTickets.rejected, (state, action) => {
+                state.complimentaryTicketsLoading = false;
+                state.complimentaryTicketsError = action.payload?.message || action.payload?.error || 'Failed to fetch complimentary tickets';
+            });
+
+        // Fetch Complimentary Ticket Details
+        builder
+            .addCase(fetchComplimentaryTicketDetails.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchComplimentaryTicketDetails.fulfilled, (state, action) => {
+                state.loading = false;
+                // Handle both wrapped and unwrapped responses
+                state.selectedComplimentaryTicket = action.payload.data || action.payload;
+            })
+            .addCase(fetchComplimentaryTicketDetails.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.message || action.payload?.error || 'Failed to fetch complimentary ticket details';
+            });
     },
 });
 
@@ -519,5 +628,11 @@ export const selectSeatingError = (state) => state.ticketing.seatingError;
 export const selectSelectedSeatsCount = (state) => state.ticketing.selectedSeats.length;
 export const selectSelectedSeatsTotal = (state) =>
     state.ticketing.selectedSeats.reduce((sum, seat) => sum + (seat.price || 0), 0);
+
+// Complimentary Tickets Selectors
+export const selectComplimentaryTickets = (state) => state.ticketing.complimentaryTickets;
+export const selectComplimentaryTicketsLoading = (state) => state.ticketing.complimentaryTicketsLoading;
+export const selectComplimentaryTicketsError = (state) => state.ticketing.complimentaryTicketsError;
+export const selectSelectedComplimentaryTicket = (state) => state.ticketing.selectedComplimentaryTicket;
 
 export default ticketingSlice.reducer;

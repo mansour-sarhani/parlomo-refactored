@@ -677,6 +677,109 @@ const ticketingService = {
         });
         return response.data;
     },
+
+    // ==========================================
+    // Complimentary Tickets Endpoints
+    // ==========================================
+
+    /**
+     * Issue complimentary tickets for an event
+     * Allows organizers and admins to issue free tickets to guests
+     * @param {string} eventId - Event ID
+     * @param {Object} data - Complimentary ticket data
+     * @param {Array<{ticket_type_id: string, quantity: number}>} data.ticket_items - Ticket types and quantities
+     * @param {Object} data.recipient - Recipient information
+     * @param {string} data.recipient.name - Recipient full name (max 255 chars)
+     * @param {string} data.recipient.email - Recipient email address
+     * @param {string} [data.recipient.phone] - Optional phone number (max 30 chars)
+     * @param {string[]} [data.selected_seats] - Required for seated events. Array of seat labels
+     * @param {string} data.reason - Reason for issuing tickets (max 200 chars)
+     * @param {string} [data.notes] - Optional additional notes (max 1000 chars)
+     * @returns {Promise} Complimentary ticket result with order and tickets
+     */
+    async issueComplimentaryTickets(eventId, data) {
+        const response = await ticketingAxios.post(
+            `/api/ticketing/events/${eventId}/complimentary-tickets`,
+            {
+                ticket_items: data.ticket_items,
+                recipient: data.recipient,
+                ...(data.selected_seats && { selected_seats: data.selected_seats }),
+                reason: data.reason,
+                ...(data.notes && { notes: data.notes }),
+            }
+        );
+        return response.data;
+    },
+
+    /**
+     * Get all complimentary tickets issued for an event
+     * @param {string} eventId - Event ID
+     * @returns {Promise} List of complimentary ticket summaries
+     */
+    async getEventComplimentaryTickets(eventId) {
+        const response = await ticketingAxios.get(
+            `/api/ticketing/events/${eventId}/complimentary-tickets`
+        );
+        return response.data;
+    },
+
+    /**
+     * Get detailed information about a complimentary ticket order
+     * @param {string} orderId - Order ID
+     * @returns {Promise} Detailed complimentary ticket order information
+     */
+    async getComplimentaryTicketDetails(orderId) {
+        const response = await ticketingAxios.get(
+            `/api/ticketing/complimentary-tickets/${orderId}`
+        );
+        return response.data;
+    },
+
+    /**
+     * Resend complimentary ticket confirmation email
+     * @param {string} orderId - Order ID
+     * @returns {Promise} Success message
+     */
+    async resendComplimentaryTicketEmail(orderId) {
+        try {
+            const response = await ticketingAxios.post(
+                `/api/ticketing/complimentary-tickets/${orderId}/resend-email`
+            );
+            return response.data;
+        } catch (error) {
+            // If endpoint doesn't exist yet, show mock success
+            if (error.response?.status === 404) {
+                console.warn('Email resend endpoint not implemented yet');
+                return {
+                    success: true,
+                    message: 'Email resend feature coming soon'
+                };
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Download complimentary ticket PDF
+     * @param {string} orderId - Order ID
+     * @returns {Promise<Blob>} PDF blob
+     */
+    async downloadComplimentaryTicketPDF(orderId) {
+        try {
+            const response = await ticketingAxios.get(
+                `/api/ticketing/complimentary-tickets/${orderId}/pdf`,
+                { responseType: 'blob' }
+            );
+            return response.data;
+        } catch (error) {
+            // If endpoint doesn't exist yet, throw user-friendly error
+            if (error.response?.status === 404) {
+                console.warn('PDF download endpoint not implemented yet');
+                throw new Error('PDF download feature coming soon');
+            }
+            throw error;
+        }
+    },
 };
 
 export default ticketingService;

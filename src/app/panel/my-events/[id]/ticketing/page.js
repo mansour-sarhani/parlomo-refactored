@@ -12,9 +12,12 @@ import TicketTypeManager from "@/components/ticketing/organizer/TicketTypeManage
 import SalesDashboard from "@/components/ticketing/organizer/SalesDashboard";
 import AttendeeList from "@/components/ticketing/organizer/AttendeeList";
 import PromoCodeManager from "@/components/ticketing/organizer/PromoCodeManager";
+import ComplimentaryTicketsManager from "@/components/ticketing/organizer/ComplimentaryTicketsManager";
 import SeatBlockingManager from "@/components/ticketing/SeatBlockingManager";
 import publicEventsService from "@/services/public-events.service";
-import { Ticket, BarChart3, Users, Tag, ChevronLeft, Lock } from "lucide-react";
+import { canManageComplimentaryTickets } from "@/utils/permissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { Ticket, BarChart3, Users, Tag, ChevronLeft, Lock, Gift } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 export default function EventTicketingManagementPage() {
@@ -24,6 +27,9 @@ export default function EventTicketingManagementPage() {
     const [activeTab, setActiveTab] = useState("tickets");
     const [event, setEvent] = useState(null);
     const [loadingEvent, setLoadingEvent] = useState(true);
+
+    // Get current user for permission checks
+    const { user, authData } = useAuth();
 
     // Fetch event data to check if it's seated
     useEffect(() => {
@@ -48,6 +54,9 @@ export default function EventTicketingManagementPage() {
 
     // Check if event is seated
     const isSeatedEvent = event?.eventType === 'seated' || event?.event_type === 'seated';
+
+    // Check if user can manage complimentary tickets
+    const canManageComp = canManageComplimentaryTickets(user, event);
 
     return (
         <div className="p-6">
@@ -105,6 +114,16 @@ export default function EventTicketingManagementPage() {
                             <Tag className="w-5 h-5" />
                             Promo Codes
                         </Button>
+                        {canManageComp && (
+                            <Button
+                                onClick={() => setActiveTab("complimentary")}
+                                variant={activeTab === "complimentary" ? "primary" : "ghost"}
+                                className="gap-2 whitespace-nowrap"
+                            >
+                                <Gift className="w-5 h-5" />
+                                Complimentary Tickets
+                            </Button>
+                        )}
                         {isSeatedEvent && (
                             <Button
                                 onClick={() => setActiveTab("blocked-seats")}
@@ -129,6 +148,13 @@ export default function EventTicketingManagementPage() {
                             {activeTab === "sales" && <SalesDashboard eventId={eventId} />}
                             {activeTab === "attendees" && <AttendeeList eventId={eventId} />}
                             {activeTab === "promocodes" && <PromoCodeManager eventId={eventId} />}
+                            {activeTab === "complimentary" && canManageComp && (
+                                <ComplimentaryTicketsManager
+                                    eventId={eventId}
+                                    ticketTypes={event?.ticketTypes || []}
+                                    isSeatedEvent={isSeatedEvent}
+                                />
+                            )}
                             {activeTab === "blocked-seats" && isSeatedEvent && (
                                 <SeatBlockingManager eventId={eventId} />
                             )}

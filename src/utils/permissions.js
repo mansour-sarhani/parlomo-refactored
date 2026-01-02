@@ -148,3 +148,25 @@ export function checkMenuPermission(
     return true;
 }
 
+/**
+ * Check if user can manage complimentary tickets for an event
+ * @param {Object} user - Current user object
+ * @param {Object} event - Event object
+ * @returns {boolean}
+ */
+export function canManageComplimentaryTickets(user, event) {
+    if (!user) return false;
+
+    // Super admin can manage any event
+    if (user.role === 'super-admin' || user.role === 'admin' || user.role === 'system-admin') {
+        return true;
+    }
+
+    // Organizer can manage their own events
+    if (user.role === 'organizer' && event && event.organizer_id === user.id) {
+        return true;
+    }
+
+    return false;
+}
+
