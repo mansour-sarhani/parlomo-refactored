@@ -362,6 +362,19 @@ const ticketingService = {
     },
 
     /**
+     * Resend ticket email to customer
+     * @param {string} orderId - Order ID
+     * @param {Object} data - Resend data
+     * @param {string} [data.email] - Optional email address (defaults to order's customer_email)
+     * @param {string} [data.reason] - Optional reason for resending
+     * @returns {Promise} Result with sent_to, sent_at, ticket_count
+     */
+    async resendTickets(orderId, data = {}) {
+        const response = await ticketingAxios.post(`/api/ticketing/orders/${orderId}/resend-tickets`, data);
+        return response.data;
+    },
+
+    /**
      * Get event promo codes
      * @param {number} eventId - Event ID
      * @returns {Promise} Promo codes list

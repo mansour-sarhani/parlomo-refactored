@@ -87,6 +87,14 @@ export const navigation = [
                     permission: "create PublicEvent",
                 },
             },
+            {
+                name: "Bookings Report",
+                href: "/panel/my-bookings",
+                icon: Receipt,
+                permission: {
+                    groupName: "Public Event",
+                },
+            },
         ],
     },
     {
@@ -208,6 +216,14 @@ export const adminNavigation = [
                 name: "Categories",
                 href: "/panel/admin/public-events/categories",
                 icon: FolderKanban,
+                permission: {
+                    groupName: "Admin",
+                },
+            },
+            {
+                name: "Bookings Report",
+                href: "/panel/admin/public-events/bookings",
+                icon: Receipt,
                 permission: {
                     groupName: "Admin",
                 },

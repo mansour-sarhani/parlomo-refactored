@@ -34,6 +34,8 @@ import {
     adminReviewEventsReducer,
 } from "@/features/adminReview";
 import { adminCommentsReducer } from "@/features/adminComments";
+import adminBookingsReducer from "@/features/bookings/adminBookingsSlice";
+import organizerSalesReducer from "@/features/bookings/organizerSalesSlice";
 
 // Import other slices here as we create them
 // import companiesReducer from "@/features/companies/companiesSlice";
@@ -78,6 +80,8 @@ export const makeStore = () => {
             adminSettings: adminSettingsReducer,
             reports: reportsReducer,
             chat: chatReducer,
+            adminBookings: adminBookingsReducer,
+            organizerSales: organizerSalesReducer,
             // Add other reducers here as we create them
             // companies: companiesReducer,
             // transactions: transactionsReducer,
