@@ -174,6 +174,7 @@ export const Footer = () => {
 
                 <div className="border-t border-gray-700 pt-6 text-center text-gray-500 text-sm">
                     <p>&copy; 2023-{new Date().getFullYear()} Parlomo. All rights reserved.</p>
+                    <p className="mt-2 text-xs text-gray-600">Version {process.env.NEXT_PUBLIC_LAST_VERSION || '2.2.2'}</p>
                 </div>
             </div>
         </footer>

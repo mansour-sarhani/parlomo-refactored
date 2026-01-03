@@ -470,7 +470,7 @@ export const Sidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
                                         color: "var(--color-text-tertiary)",
                                     }}
                                 >
-                                    Admin Panel v1.0
+                                    Version {process.env.NEXT_PUBLIC_LAST_VERSION || '2.2.2'}
                                 </p>
                             </div>
                         </div>
